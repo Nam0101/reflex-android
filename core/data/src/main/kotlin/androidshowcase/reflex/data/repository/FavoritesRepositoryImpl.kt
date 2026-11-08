@@ -3,6 +3,7 @@ package androidshowcase.reflex.data.repository
 import androidshowcase.reflex.data.catchingLocal
 import androidshowcase.reflex.data.local.FavoriteDao
 import androidshowcase.reflex.data.local.FavoriteEntity
+import androidshowcase.reflex.data.remote.artworkUrl
 import androidshowcase.reflex.domain.error.AppError
 import androidshowcase.reflex.domain.model.PokemonSummary
 import androidshowcase.reflex.domain.repository.FavoritesRepository
@@ -30,4 +31,5 @@ class FavoritesRepositoryImpl(private val dao: FavoriteDao, private val now: () 
   override suspend fun remove(id: Int): Result<Unit, AppError> = catchingLocal { dao.delete(id) }
 }
 
-private fun FavoriteEntity.toDomain() = PokemonSummary(id = id, name = name, spriteUrl = spriteUrl)
+private fun FavoriteEntity.toDomain() =
+  PokemonSummary(id = id, name = name, spriteUrl = spriteUrl, artworkUrl = artworkUrl(id))

@@ -1,14 +1,21 @@
 package androidshowcase.reflex.feature.pokedex.ui
 
 import androidshowcase.reflex.designsystem.ErrorState
-import androidshowcase.reflex.designsystem.LoadingState
+import androidshowcase.reflex.designsystem.LargeHeader
+import androidshowcase.reflex.designsystem.PokeballMark
 import androidshowcase.reflex.designsystem.ReflexTheme
 import androidshowcase.reflex.designsystem.errorMessage
+import androidshowcase.reflex.domain.error.AppError
 import androidshowcase.reflex.domain.model.PokemonSummary
 import androidshowcase.reflex.feature.pokedex.PokedexViewModel
 import androidshowcase.reflex.feature.pokedex.PokedexViewModel.Action
 import androidshowcase.reflex.feature.pokedex.PokedexViewModel.State
-import androidx.compose.foundation.clickable
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -16,21 +23,22 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyGridState
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ElevatedCard
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -38,15 +46,19 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import coil3.compose.AsyncImage
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filter
 
 private const val PREFETCH_DISTANCE = 6
+private const val PLACEHOLDERS = 6
 
 @Composable
 fun PokedexScreen(viewModel: PokedexViewModel) {
@@ -54,48 +66,36 @@ fun PokedexScreen(viewModel: PokedexViewModel) {
   PokedexContent(state, viewModel::send)
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PokedexContent(state: State, onAction: (Action) -> Unit) {
-  Scaffold(topBar = { TopAppBar(title = { Text(stringResource(R.string.pokedex_title)) }) }) { padding ->
-    val error = state.error
-    when {
-      state.items.isEmpty() && error != null ->
-        ErrorState(error, onRetry = { onAction(Action.Retry) }, Modifier.padding(padding))
-
-      state.items.isEmpty() -> LoadingState(Modifier.padding(padding))
-
-      else -> PokemonGrid(state, onAction, PaddingValues(16.dp), Modifier.padding(padding))
-    }
-  }
-}
-
-@Composable
-private fun PokemonGrid(state: State, onAction: (Action) -> Unit, contentPadding: PaddingValues, modifier: Modifier) {
   val gridState = rememberLazyGridState()
   LoadMoreNearEnd(gridState, onLoadMore = { onAction(Action.LoadMore) })
+  val error = state.error
   LazyVerticalGrid(
-    columns = GridCells.Adaptive(minSize = 112.dp),
+    columns = GridCells.Adaptive(minSize = 156.dp),
     state = gridState,
-    modifier = modifier.fillMaxSize(),
-    contentPadding = contentPadding,
-    horizontalArrangement = Arrangement.spacedBy(12.dp),
-    verticalArrangement = Arrangement.spacedBy(12.dp),
+    modifier = Modifier.fillMaxSize(),
+    contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 24.dp),
+    horizontalArrangement = Arrangement.spacedBy(14.dp),
+    verticalArrangement = Arrangement.spacedBy(14.dp),
   ) {
-    items(state.items, key = { it.id }, contentType = { "pokemon" }) { pokemon ->
-      PokemonCard(pokemon, onClick = { onAction(Action.Open(pokemon.id)) })
+    item(span = { GridItemSpan(maxLineSpan) }, contentType = "header") {
+      LargeHeader(stringResource(R.string.pokedex_title), stringResource(R.string.pokedex_subtitle))
     }
-    if (!state.endReached) {
-      item(span = { GridItemSpan(maxLineSpan) }, contentType = "footer") {
-        Box(Modifier.fillMaxWidth().padding(16.dp), contentAlignment = Alignment.Center) {
-          val error = state.error
-          if (error != null) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-              Text(errorMessage(error), color = MaterialTheme.colorScheme.error)
-              TextButton(onClick = { onAction(Action.Retry) }) { Text(stringResource(R.string.pokedex_retry)) }
-            }
-          } else {
-            CircularProgressIndicator()
+    when {
+      state.items.isEmpty() && error != null -> item(span = { GridItemSpan(maxLineSpan) }, contentType = "error") {
+        ErrorState(error, onRetry = { onAction(Action.Retry) }, Modifier.height(360.dp))
+      }
+
+      state.items.isEmpty() -> items(PLACEHOLDERS, contentType = { "placeholder" }) { PlaceholderCard() }
+
+      else -> {
+        items(state.items, key = { it.id }, contentType = { "pokemon" }) { pokemon ->
+          PokemonCard(pokemon, onClick = { onAction(Action.Open(pokemon.id)) })
+        }
+        if (!state.endReached) {
+          item(span = { GridItemSpan(maxLineSpan) }, contentType = "footer") {
+            Footer(error, onRetry = { onAction(Action.Retry) })
           }
         }
       }
@@ -118,28 +118,73 @@ private fun LoadMoreNearEnd(gridState: LazyGridState, onLoadMore: () -> Unit) {
 
 @Composable
 private fun PokemonCard(pokemon: PokemonSummary, onClick: () -> Unit) {
-  ElevatedCard(Modifier.fillMaxWidth().clickable(onClickLabel = pokemon.name.displayName(), onClick = onClick)) {
-    Column(Modifier.padding(8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-      AsyncImage(
-        model = pokemon.spriteUrl,
-        contentDescription = null,
-        modifier = Modifier.fillMaxWidth().aspectRatio(1f),
+  val color = rememberArtworkColor(pokemon.id)
+  val (container, content) = pokemonCardColors(color.value)
+  Card(
+    onClick = onClick,
+    modifier = Modifier.fillMaxWidth().aspectRatio(0.8f),
+    shape = MaterialTheme.shapes.large,
+    colors = CardDefaults.cardColors(containerColor = container, contentColor = content),
+  ) {
+    Box(Modifier.fillMaxSize()) {
+      PokeballMark(
+        Modifier.size(132.dp).align(Alignment.BottomEnd).offset(x = 34.dp, y = 34.dp).rotate(-20f),
+        color = content.copy(alpha = 0.16f),
       )
-      Text(
-        pokemon.id.dexNumber(),
-        style = MaterialTheme.typography.labelSmall,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-      )
-      Text(pokemon.name.displayName(), style = MaterialTheme.typography.titleSmall, maxLines = 1)
+      Column(Modifier.fillMaxSize().padding(14.dp)) {
+        Text(
+          pokemon.id.dexNumber(),
+          style = MaterialTheme.typography.labelLarge,
+          color = content.copy(alpha = 0.8f),
+          modifier = Modifier.align(Alignment.End),
+        )
+        PokemonArtwork(
+          pokemon.id,
+          pokemon.artworkUrl,
+          color,
+          Modifier.weight(1f).fillMaxWidth().padding(vertical = 4.dp),
+        )
+        Text(
+          pokemon.name.displayName(),
+          style = MaterialTheme.typography.titleLarge,
+          maxLines = 1,
+          overflow = TextOverflow.Ellipsis,
+        )
+      }
+    }
+  }
+}
+
+@Composable
+private fun PlaceholderCard() {
+  val transition = rememberInfiniteTransition(label = "placeholder")
+  val alpha by transition.animateFloat(0.45f, 0.9f, infiniteRepeatable(tween(900), RepeatMode.Reverse), label = "alpha")
+  Box(
+    Modifier
+      .fillMaxWidth()
+      .aspectRatio(0.8f)
+      .graphicsLayer { this.alpha = alpha }
+      .background(MaterialTheme.colorScheme.surfaceContainerHigh, MaterialTheme.shapes.large),
+  )
+}
+
+@Composable
+private fun Footer(error: AppError?, onRetry: () -> Unit) {
+  Box(Modifier.fillMaxWidth().padding(16.dp), contentAlignment = Alignment.Center) {
+    if (error != null) {
+      Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Text(errorMessage(error), color = MaterialTheme.colorScheme.error)
+        TextButton(onClick = onRetry) { Text(stringResource(R.string.pokedex_retry)) }
+      }
+    } else {
+      CircularProgressIndicator(strokeCap = StrokeCap.Round)
     }
   }
 }
 
 @Preview
 @Composable
-private fun PokedexPreview() = ReflexTheme(dynamicColor = false) {
-  PokedexContent(
-    State(items = listOf(PokemonSummary(1, "bulbasaur", ""), PokemonSummary(4, "charmander", "")), isLoading = false),
-    onAction = {},
-  )
+private fun PokedexPreview() = ReflexTheme {
+  val items = listOf(PokemonSummary(1, "bulbasaur", "", ""), PokemonSummary(4, "charmander", "", ""))
+  PokedexContent(State(items = items, isLoading = false), onAction = {})
 }

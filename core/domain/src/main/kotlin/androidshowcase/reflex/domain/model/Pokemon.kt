@@ -3,7 +3,7 @@ package androidshowcase.reflex.domain.model
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class PokemonSummary(val id: Int, val name: String, val spriteUrl: String)
+data class PokemonSummary(val id: Int, val name: String, val spriteUrl: String, val artworkUrl: String)
 
 @Serializable
 data class PokemonDetail(
@@ -16,7 +16,7 @@ data class PokemonDetail(
   val types: List<String>,
   val stats: List<PokemonStat>,
 ) {
-  val summary: PokemonSummary get() = PokemonSummary(id = id, name = name, spriteUrl = spriteUrl)
+  val summary: PokemonSummary get() = PokemonSummary(id, name, spriteUrl, artworkUrl)
 }
 
 @Serializable

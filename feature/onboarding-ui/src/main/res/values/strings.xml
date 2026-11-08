@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="onboarding_welcome">Welcome to Reflex</string>
     <string name="onboarding_language_title">Choose your language</string>
     <string name="onboarding_continue">Continue</string>
     <string name="onboarding_next">Next</string>

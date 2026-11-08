@@ -1,11 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="pokedex_title">Pokédex</string>
+    <string name="pokedex_subtitle">Tap a Pokémon to see its stats</string>
     <string name="pokedex_retry">Retry</string>
     <string name="pokedex_back">Back</string>
     <string name="pokedex_favorite">Add to favorites</string>
     <string name="pokedex_unfavorite">Remove from favorites</string>
-    <string name="pokedex_size">Height %1$.1f m · Weight %2$.1f kg</string>
+    <string name="pokedex_height">Height</string>
+    <string name="pokedex_weight">Weight</string>
+    <string name="pokedex_height_value">%1$.1f m</string>
+    <string name="pokedex_weight_value">%1$.1f kg</string>
+    <string name="pokedex_base_stats">Base stats</string>
+    <string name="pokedex_total">Total</string>
     <string name="pokedex_stat_hp">HP</string>
     <string name="pokedex_stat_attack">Attack</string>
     <string name="pokedex_stat_defense">Defense</string>
@@ -13,6 +19,11 @@
     <string name="pokedex_stat_special_defense">Sp. Def</string>
     <string name="pokedex_stat_speed">Speed</string>
     <string name="favorites_title">Favorites</string>
+    <plurals name="favorites_count">
+        <item quantity="one">%1$d Pokémon saved</item>
+        <item quantity="other">%1$d Pokémon saved</item>
+    </plurals>
+    <string name="favorites_empty_title">Your team is empty</string>
     <string name="favorites_empty">No favorites yet. Tap the heart on a Pokémon to keep it here.</string>
     <string name="favorites_remove">Remove %1$s</string>
 </resources>

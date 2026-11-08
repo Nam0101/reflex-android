@@ -13,4 +13,5 @@ dependencies {
   implementation(projects.core.designsystem)
   implementation(libs.androidx.lifecycle.runtime.compose)
   implementation(libs.bundles.coil)
+  implementation(libs.androidx.palette)
 }

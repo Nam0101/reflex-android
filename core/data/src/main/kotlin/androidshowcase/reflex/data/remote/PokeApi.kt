@@ -43,7 +43,10 @@ internal data class TypeSlotDto(val slot: Int, val type: NamedResourceDto)
 internal data class StatDto(@SerialName("base_stat") val baseStat: Int, val stat: NamedResourceDto)
 
 internal fun PokemonListDto.toPage(offset: Int): Page<PokemonSummary> = Page(
-  items = results.map { PokemonSummary(id = it.pokemonId(), name = it.name, spriteUrl = spriteUrl(it.pokemonId())) },
+  items = results.map {
+    val id = it.pokemonId()
+    PokemonSummary(id = id, name = it.name, spriteUrl = spriteUrl(id), artworkUrl = artworkUrl(id))
+  },
   nextOffset = if (next == null) null else offset + results.size,
 )
 
@@ -51,7 +54,7 @@ internal fun PokemonDto.toDomain(): PokemonDetail = PokemonDetail(
   id = id,
   name = name,
   spriteUrl = spriteUrl(id),
-  artworkUrl = "$SPRITES/other/official-artwork/$id.png",
+  artworkUrl = artworkUrl(id),
   heightDecimetres = height,
   weightHectograms = weight,
   types = types.sortedBy { it.slot }.map { it.type.name },
@@ -62,3 +65,6 @@ internal fun PokemonDto.toDomain(): PokemonDetail = PokemonDetail(
 internal fun NamedResourceDto.pokemonId(): Int = url.trimEnd('/').substringAfterLast('/').toInt()
 
 private fun spriteUrl(id: Int) = "$SPRITES/$id.png"
+
+/** Large official artwork, derived from the id (favorites store only the sprite). */
+internal fun artworkUrl(id: Int) = "$SPRITES/other/official-artwork/$id.png"

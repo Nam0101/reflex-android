@@ -1,11 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="pokedex_title">Pokédex</string>
+    <string name="pokedex_subtitle">Chạm vào một Pokémon để xem chỉ số</string>
     <string name="pokedex_retry">Thử lại</string>
     <string name="pokedex_back">Quay lại</string>
     <string name="pokedex_favorite">Thêm vào yêu thích</string>
     <string name="pokedex_unfavorite">Bỏ khỏi yêu thích</string>
-    <string name="pokedex_size">Cao %1$.1f m · Nặng %2$.1f kg</string>
+    <string name="pokedex_height">Chiều cao</string>
+    <string name="pokedex_weight">Cân nặng</string>
+    <string name="pokedex_height_value">%1$.1f m</string>
+    <string name="pokedex_weight_value">%1$.1f kg</string>
+    <string name="pokedex_base_stats">Chỉ số cơ bản</string>
+    <string name="pokedex_total">Tổng</string>
     <string name="pokedex_stat_hp">HP</string>
     <string name="pokedex_stat_attack">Tấn công</string>
     <string name="pokedex_stat_defense">Phòng thủ</string>
@@ -13,6 +19,10 @@
     <string name="pokedex_stat_special_defense">PT đặc biệt</string>
     <string name="pokedex_stat_speed">Tốc độ</string>
     <string name="favorites_title">Yêu thích</string>
+    <plurals name="favorites_count">
+        <item quantity="other">Đã lưu %1$d Pokémon</item>
+    </plurals>
+    <string name="favorites_empty_title">Đội hình còn trống</string>
     <string name="favorites_empty">Chưa có Pokémon yêu thích. Chạm vào trái tim trên một Pokémon để lưu ở đây.</string>
     <string name="favorites_remove">Xoá %1$s</string>
 </resources>
