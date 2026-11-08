@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="ds_retry">Thử lại</string>
+    <string name="ds_error_network">Không có kết nối mạng. Kiểm tra mạng rồi thử lại.</string>
+    <string name="ds_error_timeout">Máy chủ phản hồi quá lâu.</string>
+    <string name="ds_error_not_found">Không tìm thấy.</string>
+    <string name="ds_error_server">Lỗi máy chủ (%1$d). Vui lòng thử lại sau.</string>
+    <string name="ds_error_storage">Không lưu được trên máy.</string>
+    <string name="ds_error_unknown">Đã có lỗi xảy ra.</string>
+</resources>

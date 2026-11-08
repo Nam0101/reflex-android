@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="onboarding_language_title">Choose your language</string>
+    <string name="onboarding_continue">Continue</string>
+    <string name="onboarding_next">Next</string>
+    <string name="onboarding_skip">Skip</string>
+    <string name="onboarding_get_started">Get started</string>
+    <string name="onboarding_page1_title">Browse every Pokémon</string>
+    <string name="onboarding_page1_body">Scroll the whole Pokédex, page by page.</string>
+    <string name="onboarding_page2_title">Keep your favorites</string>
+    <string name="onboarding_page2_body">Tap the heart on any Pokémon to save it on this device.</string>
+    <string name="onboarding_page3_title">Built to be tested</string>
+    <string name="onboarding_page3_body">Every screen can be driven headlessly, without a device.</string>
+</resources>

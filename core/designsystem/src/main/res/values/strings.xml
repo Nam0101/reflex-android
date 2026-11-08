@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="ds_retry">Retry</string>
+    <string name="ds_error_network">No internet connection. Check your network and try again.</string>
+    <string name="ds_error_timeout">The server took too long to answer.</string>
+    <string name="ds_error_not_found">Not found.</string>
+    <string name="ds_error_server">Server error (%1$d). Please try again later.</string>
+    <string name="ds_error_storage">Could not save on this device.</string>
+    <string name="ds_error_unknown">Something went wrong.</string>
+</resources>

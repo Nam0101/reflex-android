@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="onboarding_language_title">Chọn ngôn ngữ</string>
+    <string name="onboarding_continue">Tiếp tục</string>
+    <string name="onboarding_next">Tiếp</string>
+    <string name="onboarding_skip">Bỏ qua</string>
+    <string name="onboarding_get_started">Bắt đầu</string>
+    <string name="onboarding_page1_title">Xem mọi Pokémon</string>
+    <string name="onboarding_page1_body">Cuộn toàn bộ Pokédex, từng trang một.</string>
+    <string name="onboarding_page2_title">Lưu Pokémon yêu thích</string>
+    <string name="onboarding_page2_body">Chạm vào trái tim trên Pokémon bất kỳ để lưu vào máy.</string>
+    <string name="onboarding_page3_title">Sinh ra để test</string>
+    <string name="onboarding_page3_body">Mọi màn hình đều điều khiển được mà không cần thiết bị.</string>
+</resources>

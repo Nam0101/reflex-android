@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="pokedex_title">Pokédex</string>
+    <string name="pokedex_retry">Retry</string>
+    <string name="pokedex_back">Back</string>
+    <string name="pokedex_favorite">Add to favorites</string>
+    <string name="pokedex_unfavorite">Remove from favorites</string>
+    <string name="pokedex_size">Height %1$.1f m · Weight %2$.1f kg</string>
+    <string name="pokedex_stat_hp">HP</string>
+    <string name="pokedex_stat_attack">Attack</string>
+    <string name="pokedex_stat_defense">Defense</string>
+    <string name="pokedex_stat_special_attack">Sp. Atk</string>
+    <string name="pokedex_stat_special_defense">Sp. Def</string>
+    <string name="pokedex_stat_speed">Speed</string>
+    <string name="favorites_title">Favorites</string>
+    <string name="favorites_empty">No favorites yet. Tap the heart on a Pokémon to keep it here.</string>
+    <string name="favorites_remove">Remove %1$s</string>
+</resources>
