@@ -17,8 +17,9 @@ README.md has the module map and commands.
   Every suspend call and side effect runs inside an effect and reports back as a `Message`.
 - Errors are values: repositories return `Result<T, AppError>`; `catchingRemote` / `catchingLocal` rethrow
   `CancellationException`. State exposes `AppError?`; views map it to text with `errorMessage`.
-- Dependencies are constructor parameters, wired by hand: data in `shell/AppGraph`, ViewModels in
-  `ReflexApp.createScreen`.
+- Dependencies are constructor parameters, wired with the Koin DSL: data and platform ports in
+  `shell/DataModule.kt`, screens in each feature's module (`pokedexModule`) with `screen<Route> { }`. ViewModels
+  never call Koin, so tests construct them by hand. Each `ReflexApp` owns a `koinApplication`; never `startKoin`.
 
 ## Adding a screen
 
@@ -31,8 +32,9 @@ Each step is done when its check holds.
    `Message` wraps `ViewAction(action)` plus effect results. Check: a unit test drives `send` and asserts `state`.
 3. **Introspection node**: extend `ViewModelIntrospectionNode`, one `action(...)` per user action, named as a
    camelCase verb (`toggleFavorite`). Check: every button or gesture in the view has a matching node action.
-4. **Register** the screen in three places: `ReflexApp.createScreen`, `resolveNode` in `shell/AppIntrospection.kt`,
-   and `ScreenContent` (or `HomeTabs`) in `app/.../ui/ReflexHost.kt`. Check: `reflex headless`, then `ls` on the
+4. **Register** the screen in three places: `screen<YourRoute> { }` in the feature's Koin module (a new feature also
+   adds its module to `modules(...)` in `ReflexApp`), `resolveNode` in `shell/AppIntrospection.kt`, and
+   `ScreenContent` (or `HomeTabs`) in `app/.../ui/ReflexHost.kt`. Check: `reflex headless`, then `ls` on the
    screen, prints its name, state and actions.
 5. **View** in the feature's `-ui` module: a binding composable that collects `state` with
    `collectAsStateWithLifecycle`, and a stateless `XxxContent(state, onAction)` with a `@Preview`. Check: the view
@@ -54,6 +56,9 @@ Each step is done when its check holds.
 - `ReflexViewModel` effects run on the scope passed in (`Dispatchers.Main.immediate` on Android, one
   `reflex-main` thread headless). Blocking I/O belongs in repositories, which switch to `Dispatchers.IO`.
 - `runCatching` around suspend code swallows cancellation: use the `catching*` helpers in `core:data`.
+- Koin modules are functions (`fun pokedexModule() = module { }`), not `val`s: a module object holds its singles'
+  instances, so two live `ReflexApp`s loading the same `val` (an unclosed headless session and the next one) would
+  share one HTTP client and database. `allowOverride(false)` makes a route registered twice fail at startup.
 
 ## Commands
 

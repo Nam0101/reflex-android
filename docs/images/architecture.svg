@@ -59,7 +59,7 @@
   <g class="sans">
     <rect x="330" y="290" width="790" height="56" rx="12" class="chip"/>
     <text x="348" y="314" class="mono name">:shell</text>
-    <text x="348" y="334" class="desc">ReflexApp · composition root (AppGraph) · StackNavigator / TabNavigator · deep links · introspection root</text>
+    <text x="348" y="334" class="desc">ReflexApp · composition root (Koin) · StackNavigator / TabNavigator · deep links · introspection root</text>
 
     <rect x="330" y="356" width="390" height="56" rx="12" class="chip"/>
     <text x="348" y="380" class="mono name">:feature:onboarding</text>

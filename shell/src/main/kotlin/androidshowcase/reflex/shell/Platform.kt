@@ -8,7 +8,7 @@ import io.ktor.client.engine.HttpClientEngine
 import kotlinx.coroutines.CoroutineScope
 
 /**
- * Everything Core needs from the platform, passed through the constructor (no DI framework).
+ * Everything Core needs from the platform, passed to [ReflexApp]; `dataModule` binds it into the app's Koin instance.
  * Android passes real implementations; the CLI and behavior tests pass fixtures.
  * Factories are invoked lazily, off the main thread where it matters.
  */
