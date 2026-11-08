@@ -1,0 +1,108 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="690" viewBox="0 0 1200 690" role="img" aria-label="Reflex architecture: Mobile and CLI both drive the pure-JVM Core">
+  <defs>
+    <linearGradient id="accent" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#A97BFF"/>
+      <stop offset="1" stop-color="#3DDC84"/>
+    </linearGradient>
+    <marker id="arrow" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0L10 5L0 10z" fill="#8b949e"/>
+    </marker>
+  </defs>
+  <style>
+    .sans { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Helvetica, Arial, sans-serif; }
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+    .lane { fill: #161b22; stroke: #30363d; }
+    .chip { fill: #0d1117; stroke: #30363d; }
+    .kicker { font-size: 13px; letter-spacing: 3px; fill: #7d8590; }
+    .lanetitle { font-size: 19px; font-weight: 700; fill: #e6edf3; }
+    .note { font-size: 13px; fill: #8b949e; }
+    .name { font-size: 15px; fill: #e6edf3; }
+    .desc { font-size: 12px; fill: #8b949e; }
+    .flow { font-size: 13px; fill: #8b949e; }
+  </style>
+
+  <rect width="1200" height="690" rx="20" fill="#0d1117"/>
+  <text x="48" y="58" class="sans" font-size="26" font-weight="800" fill="#e6edf3">Architecture</text>
+  <text x="48" y="86" class="sans note" font-size="15">Dependencies point down. Core owns every rule; Mobile and CLI are two ways to look at it.</text>
+
+  <!-- Mobile -->
+  <rect x="48" y="112" width="1104" height="104" rx="16" class="lane"/>
+  <text x="72" y="144" class="mono kicker">MOBILE</text>
+  <text x="72" y="170" class="sans lanetitle">Android + Compose</text>
+  <text x="72" y="192" class="sans note">renders state, sends actions</text>
+  <g class="sans">
+    <rect x="330" y="132" width="250" height="64" rx="12" class="chip"/>
+    <text x="348" y="158" class="mono name">:app</text>
+    <text x="348" y="180" class="desc">Activity · Nav3 host · platform services</text>
+    <rect x="600" y="132" width="250" height="64" rx="12" class="chip"/>
+    <text x="618" y="158" class="mono name">:feature:*-ui</text>
+    <text x="618" y="180" class="desc">stateless screens + previews</text>
+    <rect x="870" y="132" width="250" height="64" rx="12" class="chip"/>
+    <text x="888" y="158" class="mono name">:core:designsystem</text>
+    <text x="888" y="180" class="desc">theme · loading and error states</text>
+  </g>
+
+  <g stroke="#8b949e" stroke-width="2" fill="none">
+    <path d="M560 220V264" marker-end="url(#arrow)"/>
+    <path d="M640 264V220" marker-end="url(#arrow)"/>
+  </g>
+  <text x="548" y="248" text-anchor="end" class="mono flow">send(Action)</text>
+  <text x="652" y="248" class="mono flow">StateFlow&lt;State&gt;</text>
+
+  <!-- Core -->
+  <rect x="48" y="270" width="1104" height="226" rx="16" fill="#161b22" stroke="url(#accent)" stroke-width="2.5"/>
+  <text x="72" y="302" class="mono kicker">CORE</text>
+  <text x="72" y="328" class="sans lanetitle">Pure JVM</text>
+  <text x="72" y="352" class="sans note">no android.* imports</text>
+  <text x="72" y="372" class="sans note">the whole app: state,</text>
+  <text x="72" y="392" class="sans note">rules and navigation</text>
+  <g class="sans">
+    <rect x="330" y="290" width="790" height="56" rx="12" class="chip"/>
+    <text x="348" y="314" class="mono name">:shell</text>
+    <text x="348" y="334" class="desc">ReflexApp · composition root (AppGraph) · StackNavigator / TabNavigator · deep links · introspection root</text>
+
+    <rect x="330" y="356" width="390" height="56" rx="12" class="chip"/>
+    <text x="348" y="380" class="mono name">:feature:onboarding</text>
+    <text x="348" y="400" class="desc">ViewModels · routes · introspection nodes</text>
+    <rect x="730" y="356" width="390" height="56" rx="12" class="chip"/>
+    <text x="748" y="380" class="mono name">:feature:pokedex</text>
+    <text x="748" y="400" class="desc">ViewModels · routes · introspection nodes</text>
+
+    <rect x="330" y="422" width="190" height="56" rx="12" class="chip"/>
+    <text x="346" y="446" class="mono name">:core:viewmodel</text>
+    <text x="346" y="466" class="desc">update → Next · navigators</text>
+    <rect x="530" y="422" width="190" height="56" rx="12" class="chip"/>
+    <text x="544" y="446" class="mono name" style="font-size:13px">:core:introspection</text>
+    <text x="546" y="466" class="desc">nodes · typed actions</text>
+    <rect x="730" y="422" width="190" height="56" rx="12" class="chip"/>
+    <text x="746" y="446" class="mono name">:core:data</text>
+    <text x="746" y="466" class="desc">Ktor · Room 3 · DataStore</text>
+    <rect x="930" y="422" width="190" height="56" rx="12" class="chip"/>
+    <text x="946" y="446" class="mono name">:core:domain</text>
+    <text x="946" y="466" class="desc">models · ports · AppError</text>
+  </g>
+
+  <g stroke="#8b949e" stroke-width="2" fill="none">
+    <path d="M560 544V500" marker-end="url(#arrow)"/>
+    <path d="M640 500V544" marker-end="url(#arrow)"/>
+  </g>
+  <text x="548" y="528" text-anchor="end" class="mono flow">ls · do &lt;action&gt; [json]</text>
+  <text x="652" y="528" class="mono flow">screen · state · actions (JSON)</text>
+
+  <!-- CLI -->
+  <rect x="48" y="550" width="1104" height="104" rx="16" class="lane"/>
+  <text x="72" y="582" class="mono kicker">CLI</text>
+  <text x="72" y="608" class="sans lanetitle">Headless + socket</text>
+  <text x="72" y="630" class="sans note">drives Core like a user</text>
+  <g class="sans">
+    <rect x="330" y="570" width="250" height="64" rx="12" class="chip"/>
+    <text x="348" y="596" class="mono name">reflex headless</text>
+    <text x="348" y="618" class="desc">the real app over stdin/stdout</text>
+    <rect x="600" y="570" width="250" height="64" rx="12" class="chip"/>
+    <text x="618" y="596" class="mono name">behavior tests</text>
+    <text x="618" y="618" class="desc">precondition → act → state ⊇ expected</text>
+    <rect x="870" y="570" width="250" height="64" rx="12" class="chip"/>
+    <text x="888" y="596" class="mono name">reflex ls | do</text>
+    <text x="888" y="618" class="desc">drives a debug build over adb</text>
+  </g>
+</svg>

@@ -1,0 +1,14 @@
+version: 2
+updates:
+  # One weekly PR for the whole version catalog, so related bumps (Kotlin + KSP, AGP + Compose) land together.
+  - package-ecosystem: gradle
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      gradle:
+        patterns: ["*"]
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly

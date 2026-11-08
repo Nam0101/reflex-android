@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="300" viewBox="0 0 1000 300" role="img" aria-label="One screen: views and introspection send actions, update returns the next state and effects">
+  <defs>
+    <linearGradient id="accent" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#A97BFF"/>
+      <stop offset="1" stop-color="#3DDC84"/>
+    </linearGradient>
+    <marker id="arrow" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0L10 5L0 10z" fill="#8b949e"/>
+    </marker>
+  </defs>
+  <style>
+    .sans { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Helvetica, Arial, sans-serif; }
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+    .box { fill: #161b22; stroke: #30363d; }
+    .title { font-size: 16px; font-weight: 700; fill: #e6edf3; }
+    .sub { font-size: 12.5px; fill: #8b949e; }
+    .flow { font-size: 12.5px; fill: #8b949e; }
+  </style>
+  <rect width="1000" height="300" rx="20" fill="#0d1117"/>
+
+  <rect x="30" y="96" width="190" height="76" rx="14" class="box"/>
+  <text x="125" y="128" text-anchor="middle" class="sans title">Compose view</text>
+  <text x="125" y="150" text-anchor="middle" class="sans sub">renders State</text>
+
+  <rect x="30" y="206" width="190" height="66" rx="14" class="box" stroke-dasharray="6 5"/>
+  <text x="125" y="234" text-anchor="middle" class="sans title">Introspection node</text>
+  <text x="125" y="255" text-anchor="middle" class="mono sub">ls · do (CLI, tests)</text>
+
+  <rect x="340" y="96" width="300" height="76" rx="14" fill="#161b22" stroke="url(#accent)" stroke-width="2.5"/>
+  <text x="490" y="128" text-anchor="middle" class="mono title">update(state, message)</text>
+  <text x="490" y="150" text-anchor="middle" class="sans sub">pure · returns Next(state, effects)</text>
+
+  <rect x="780" y="96" width="190" height="76" rx="14" class="box"/>
+  <text x="875" y="128" text-anchor="middle" class="mono title">StateFlow&lt;State&gt;</text>
+  <text x="875" y="150" text-anchor="middle" class="sans sub">immutable · serializable</text>
+
+  <rect x="360" y="216" width="260" height="56" rx="14" class="box"/>
+  <text x="490" y="240" text-anchor="middle" class="mono title" font-size="14">task · stream · cancel</text>
+  <text x="490" y="260" text-anchor="middle" class="sans sub">effects: I/O, timers, flows</text>
+
+  <g stroke="#8b949e" stroke-width="2" fill="none">
+    <path d="M222 134H336" marker-end="url(#arrow)"/>
+    <path d="M222 236C290 236 300 160 336 160" stroke-dasharray="6 5" marker-end="url(#arrow)"/>
+    <path d="M642 134H776" marker-end="url(#arrow)"/>
+    <path d="M875 94V48H125V92" marker-end="url(#arrow)"/>
+    <path d="M460 174V212" marker-end="url(#arrow)"/>
+    <path d="M520 212V176" marker-end="url(#arrow)"/>
+  </g>
+  <text x="279" y="124" text-anchor="middle" class="mono flow">send(Action)</text>
+  <text x="709" y="124" text-anchor="middle" class="mono flow">next state</text>
+  <text x="500" y="40" text-anchor="middle" class="mono flow">collectAsStateWithLifecycle()</text>
+  <text x="452" y="198" text-anchor="end" class="mono flow">effects</text>
+  <text x="528" y="198" class="mono flow">Message(result)</text>
+</svg>
