@@ -1,0 +1,31 @@
+name: Release
+
+# Pushing a tag like v1.0.0 builds the release APK and publishes it as a GitHub Release.
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: 21
+      - uses: gradle/actions/setup-gradle@v6
+      - name: Build release APK
+        run: ./gradlew :app:assembleRelease
+      - name: Publish GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cp app/build/outputs/apk/release/app-release.apk "reflex-$GITHUB_REF_NAME.apk"
+          gh release create "$GITHUB_REF_NAME" "reflex-$GITHUB_REF_NAME.apk" \
+            --verify-tag --title "$GITHUB_REF_NAME" --generate-notes \
+            --notes "Signed with the debug key (CI has no release keystore): install it for testing; Play rejects it."
