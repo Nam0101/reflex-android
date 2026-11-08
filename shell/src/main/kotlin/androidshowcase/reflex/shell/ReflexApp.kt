@@ -3,22 +3,24 @@ package androidshowcase.reflex.shell
 import androidshowcase.reflex.domain.model.LaunchStep
 import androidshowcase.reflex.domain.usecase.ResolveLaunchStep
 import androidshowcase.reflex.feature.onboarding.LanguageRoute
-import androidshowcase.reflex.feature.onboarding.LanguageViewModel
 import androidshowcase.reflex.feature.onboarding.OnboardingNavigation
 import androidshowcase.reflex.feature.onboarding.OnboardingRoute
-import androidshowcase.reflex.feature.onboarding.OnboardingViewModel
+import androidshowcase.reflex.feature.onboarding.onboardingModule
 import androidshowcase.reflex.feature.pokedex.FavoritesRoute
-import androidshowcase.reflex.feature.pokedex.FavoritesViewModel
 import androidshowcase.reflex.feature.pokedex.PokedexNavigation
 import androidshowcase.reflex.feature.pokedex.PokedexRoute
-import androidshowcase.reflex.feature.pokedex.PokedexViewModel
 import androidshowcase.reflex.feature.pokedex.PokemonDetailRoute
-import androidshowcase.reflex.feature.pokedex.PokemonDetailViewModel
+import androidshowcase.reflex.feature.pokedex.pokedexModule
 import androidshowcase.reflex.navigation.Route
 import androidshowcase.reflex.navigation.ScreenModel
 import androidshowcase.reflex.navigation.StackNavigator
 import androidshowcase.reflex.navigation.TabNavigator
+import androidshowcase.reflex.navigation.UiScope
+import androidshowcase.reflex.navigation.createScreen
+import androidshowcase.reflex.navigation.screen
 import java.util.concurrent.atomic.AtomicReference
+import org.koin.dsl.koinApplication
+import org.koin.dsl.module
 
 data object HomeRoute : Route
 
@@ -27,8 +29,12 @@ data object HomeRoute : Route
  * the screens on display; each screen is one ViewModel. Nothing here touches a view, so the whole app
  * can be walked headlessly. Views only render [navigator] and send actions.
  */
-class ReflexApp(private val platform: Platform) : AutoCloseable {
-  private val graph = AppGraph(platform)
+class ReflexApp(platform: Platform) : AutoCloseable {
+  /** One Koin instance per app, never the global one: the CLI and the behavior tests run several apps. */
+  private val koin = koinApplication {
+    allowOverride(false)
+    modules(dataModule(platform), shellModule(), onboardingModule(), pokedexModule())
+  }.koin
   private val pendingDeepLink = AtomicReference<List<Route>?>(null)
 
   val navigator = StackNavigator(::createScreen)
@@ -57,18 +63,17 @@ class ReflexApp(private val platform: Platform) : AutoCloseable {
 
   override fun close() {
     navigator.close()
-    graph.close()
+    koin.close()
   }
 
-  private fun createScreen(route: Route): ScreenModel = when (route) {
-    SplashRoute -> SplashViewModel(ResolveLaunchStep(graph.settings), ::onLaunchStep, platform.uiScope)
-    LanguageRoute -> LanguageViewModel(graph.settings, platform.languageApplier, onboardingNavigation, platform.uiScope)
-    OnboardingRoute -> OnboardingViewModel(graph.settings, onboardingNavigation, platform.uiScope)
-    HomeRoute -> TabNavigator(listOf(PokedexRoute, FavoritesRoute), ::createScreen)
-    PokedexRoute -> PokedexViewModel(graph.pokemon, pokedexNavigation, platform.uiScope)
-    FavoritesRoute -> FavoritesViewModel(graph.favorites, pokedexNavigation, platform.uiScope)
-    is PokemonDetailRoute -> PokemonDetailViewModel(route.id, graph.pokemon, graph.favorites, platform.uiScope)
-    else -> error("No screen registered for $route")
+  private fun createScreen(route: Route): ScreenModel = koin.createScreen(route)
+
+  /** What the shell itself provides: the features' navigation ports and the screens no feature owns. */
+  private fun shellModule() = module {
+    single<OnboardingNavigation> { onboardingNavigation }
+    single<PokedexNavigation> { pokedexNavigation }
+    screen<SplashRoute> { SplashViewModel(ResolveLaunchStep(get()), ::onLaunchStep, get(UiScope)) }
+    screen<HomeRoute> { TabNavigator(listOf(PokedexRoute, FavoritesRoute), ::createScreen) }
   }
 
   private fun onLaunchStep(step: LaunchStep) = when (step) {

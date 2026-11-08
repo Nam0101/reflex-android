@@ -81,8 +81,8 @@ Core (`ResolveLaunchStep`) behind the system splash screen. Each card takes the 
   <img src="docs/images/architecture.svg" alt="Mobile (Android + Compose) and CLI both drive the pure-JVM Core" width="100%">
 </p>
 
-- **Core** holds the whole app. `:shell` is the composition root: it wires repositories (`AppGraph`), creates a
-  ViewModel per route, owns the navigators and handles deep links.
+- **Core** holds the whole app. `:shell` is the composition root: it loads the Koin modules (`dataModule` plus one
+  per feature), creates a ViewModel per route, owns the navigators and handles deep links.
 - **Mobile** is thin. `:app` provides the platform (Room builder, settings file, locale switching), renders the
   navigator with Navigation 3 and binds each screen to its ViewModel.
 - **CLI** is the second front end. It runs the real Core headless with HTTP fixtures, or talks to a debug build
@@ -263,6 +263,7 @@ reflex-android
 | UI | Compose BOM 2026.09.00 (Material 3), Navigation 3 1.2.1, Lifecycle 2.11.0, Activity Compose 1.13.0, SplashScreen 1.2.0, AppCompat 1.8.0 (per-app locales), Coil 3.6.3, Palette 1.1.0 |
 | Data | Ktor 3.6.1 (OkHttp), kotlinx.serialization 1.12.0, Room 3.0.3 + bundled SQLite 2.7.1, DataStore 1.3.0 |
 | Async & errors | kotlinx.coroutines 1.11.0, kotlin-result 2.3.1 |
+| Dependency injection | Koin 4.2.2 (core, DSL) |
 | Testing | JUnit 6.1.3, kotlinx-coroutines-test, Ktor MockEngine, behavior tests over the introspection protocol |
 | Performance | Baseline Profile + Macrobenchmark 1.5.0, ProfileInstaller, R8 |
 | Quality | Spotless 8.11.0 + ktlint 1.8.0, GitHub Actions, Dependabot |
@@ -273,7 +274,7 @@ Min SDK 26, target and compile SDK 37. Versions live in [`gradle/libs.versions.t
 
 1. Route + ViewModel (`State`, `Action`, `Message`, pure `update`) in a JVM feature module.
 2. An introspection node with one action per user action.
-3. Register it in `ReflexApp.createScreen`, `resolveNode` and the Compose host.
+3. Register it with `screen<Route> { }` in the feature's Koin module, in `resolveNode` and in the Compose host.
 4. A stateless Compose screen in the feature's `-ui` module.
 5. A behavior test that walks the journey, with fixtures for its HTTP calls.
 
@@ -281,8 +282,9 @@ Min SDK 26, target and compile SDK 37. Versions live in [`gradle/libs.versions.t
 
 ## Design notes
 
-- **Manual DI.** The graph is small and explicit: `Platform` (what Android provides) → `AppGraph` (data) →
-  `ReflexApp` (screens). No framework, no generated code.
+- **Koin at the edge.** `Platform` (what Android provides) → `dataModule` (data) → one module per feature
+  (screens), loaded into a `koinApplication` each `ReflexApp` owns. ViewModels keep plain constructors and never
+  call Koin; there is no global instance and no generated code.
 - **JVM, not KMP.** Core modules are Kotlin/JVM so they run headless and in plain JUnit. Moving them to
   Kotlin Multiplatform later is mostly a build change.
 - **Process death.** Navigation is rebuilt from launch rules (language chosen? onboarding done?) instead of being
