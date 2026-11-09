@@ -1,6 +1,7 @@
 package androidshowcase.reflex.feature.pokedex.ui
 
 import android.util.LruCache
+import androidshowcase.reflex.designsystem.sharedElement
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.material3.MaterialTheme
@@ -53,6 +54,12 @@ private val artworkColors = LruCache<Int, Int>(512)
 internal fun rememberArtworkColor(id: Int): MutableState<Color?> =
   remember(id) { mutableStateOf(artworkColors.get(id)?.let(::Color)) }
 
+/** Shared element key of a Pokémon's artwork: a list card hands it over to the detail header. */
+internal fun artworkKey(id: Int): String = "artwork-$id"
+
+/** Shared bounds key of a Pokémon's colored background: the list card's morphs into the detail header's. */
+internal fun backgroundKey(id: Int): String = "background-$id"
+
 /**
  * Official artwork that also extracts its Palette color into [color], off the main thread and once per Pokémon.
  * Palette reads pixels, so these requests decode to software bitmaps.
@@ -62,7 +69,12 @@ internal fun PokemonArtwork(id: Int, url: String, color: MutableState<Color?>, m
   val context = LocalPlatformContext.current
   val request = remember(url) { ImageRequest.Builder(context).data(url).allowHardware(false).crossfade(true).build() }
   var decoded by remember(url) { mutableStateOf<Image?>(null) }
-  AsyncImage(model = request, contentDescription = null, modifier = modifier, onSuccess = { decoded = it.result.image })
+  AsyncImage(
+    model = request,
+    contentDescription = null,
+    modifier = modifier.sharedElement(artworkKey(id)),
+    onSuccess = { decoded = it.result.image },
+  )
   val image = decoded
   if (image != null && color.value == null) {
     LaunchedEffect(image) { color.value = artworkColor(id, image) }

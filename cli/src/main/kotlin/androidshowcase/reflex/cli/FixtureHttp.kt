@@ -9,6 +9,7 @@ import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.headersOf
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.CopyOnWriteArrayList
 
 /**
@@ -19,20 +20,21 @@ import java.util.concurrent.CopyOnWriteArrayList
  * Fixture names: `pokemon-list-<offset>` for `GET pokemon?offset=…&limit=20`, `pokemon-<id>` for `GET pokemon/<id>`.
  */
 class FixtureHttp {
-  private val failures = ConcurrentHashMap<String, HttpStatusCode>()
+  private val failures = ConcurrentHashMap<String, ConcurrentLinkedQueue<HttpStatusCode>>()
 
   val violations: MutableList<String> = CopyOnWriteArrayList()
 
-  /** Answers the fixture [name] with [status] until [clearFailures]. */
-  fun fail(name: String, status: HttpStatusCode) {
-    failures[name] = status
+  /**
+   * Answers the next request for the fixture [name] with [status]; the requests after it get the fixture again.
+   * A test declares its whole scenario this way before the journey starts: fixtures are never patched mid-test.
+   */
+  fun failOnce(name: String, status: HttpStatusCode) {
+    failures.getOrPut(name, ::ConcurrentLinkedQueue).add(status)
   }
-
-  fun clearFailures() = failures.clear()
 
   val engine: HttpClientEngine = MockEngine { request ->
     val name = fixtureName(request)
-    val failure = name?.let(failures::get)
+    val failure = name?.let { failures[it]?.poll() }
     val body = name?.let {
       javaClass.getResourceAsStream("/fixtures/$it.json")?.use { stream -> stream.readBytes().decodeToString() }
     }

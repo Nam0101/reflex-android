@@ -1,6 +1,8 @@
 package androidshowcase.reflex.ui
 
 import androidshowcase.reflex.R
+import androidshowcase.reflex.designsystem.LocalSharedTransition
+import androidshowcase.reflex.designsystem.SharedTransition
 import androidshowcase.reflex.feature.onboarding.LanguageViewModel
 import androidshowcase.reflex.feature.onboarding.OnboardingViewModel
 import androidshowcase.reflex.feature.onboarding.ui.LanguageScreen
@@ -16,6 +18,7 @@ import androidshowcase.reflex.navigation.Screen
 import androidshowcase.reflex.navigation.StackNavigator
 import androidshowcase.reflex.navigation.TabNavigator
 import androidshowcase.reflex.shell.SplashViewModel
+import androidx.compose.animation.SharedTransitionLayout
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.consumeWindowInsets
@@ -31,12 +34,15 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation3.runtime.NavEntry
+import androidx.navigation3.ui.LocalNavAnimatedContentScope
 import androidx.navigation3.ui.NavDisplay
 
 /**
@@ -48,11 +54,20 @@ fun ReflexHost(navigator: StackNavigator) {
   val screens by navigator.screens.collectAsStateWithLifecycle()
   if (screens.isEmpty()) return
   val goBack = { navigator.send(StackNavigator.Action.GoBack) }
-  NavDisplay(
-    backStack = screens,
-    onBack = goBack,
-    entryProvider = { screen -> NavEntry(screen, contentKey = screen.key) { ScreenContent(it, goBack) } },
-  )
+  SharedTransitionLayout {
+    NavDisplay(
+      backStack = screens,
+      onBack = goBack,
+      entryProvider = { screen ->
+        NavEntry(screen, contentKey = screen.key) {
+          // Screens hand elements over to the next screen (a Pokémon's artwork) through this.
+          val animatedScope = LocalNavAnimatedContentScope.current
+          val shared = remember(animatedScope) { SharedTransition(this@SharedTransitionLayout, animatedScope) }
+          CompositionLocalProvider(LocalSharedTransition provides shared) { ScreenContent(it, goBack) }
+        }
+      },
+    )
+  }
 }
 
 @Composable

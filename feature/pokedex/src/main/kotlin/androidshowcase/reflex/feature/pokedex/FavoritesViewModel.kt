@@ -32,6 +32,9 @@ class FavoritesViewModel(
 
     @Serializable
     data class Remove(val id: Int) : Action
+
+    /** Subscribes to the database again after a storage error. */
+    data object Retry : Action
   }
 
   sealed interface Message {
@@ -44,7 +47,7 @@ class FavoritesViewModel(
 
   override fun viewAction(action: Action) = Message.ViewAction(action)
 
-  override fun onStart() = listOf(stream<Message>(FAVORITES_STREAM, favorites.favorites().map { Message.Loaded(it) }))
+  override fun onStart() = listOf(observe())
 
   override fun update(state: State, message: Message): Next<State, Message> = when (message) {
     is Message.ViewAction -> when (val action = message.action) {
@@ -56,6 +59,8 @@ class FavoritesViewModel(
       )
 
       is Action.Remove -> state.copy(error = null).next(task { Message.Removed(favorites.remove(action.id)) })
+
+      Action.Retry -> if (state.isLoading) state.next() else state.copy(isLoading = true, error = null).next(observe())
     }
 
     is Message.Loaded -> message.result.fold(
@@ -68,6 +73,8 @@ class FavoritesViewModel(
       failure = { state.copy(error = it).next() },
     )
   }
+
+  private fun observe() = stream<Message>(FAVORITES_STREAM, favorites.favorites().map { Message.Loaded(it) })
 
   private companion object {
     const val FAVORITES_STREAM = "favorites"

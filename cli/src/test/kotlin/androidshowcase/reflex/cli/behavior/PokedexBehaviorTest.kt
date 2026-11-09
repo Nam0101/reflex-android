@@ -23,6 +23,7 @@ class PokedexBehaviorTest : BehaviorTest() {
       state = """{"items":[{"id":25,"name":"pikachu"}]}""",
     )
     app.refused("selectTab", """{"tab":"Settings"}""")
+    app.act("retry", state = """{"isLoading":false,"items":[{"id":25}]}""")
     app.act("open", """{"id":25}""", expect = "PokemonDetail", state = """{"isLoading":false,"isFavorite":true}""")
     app.act("toggleFavorite", state = """{"isFavorite":false}""")
     app.act("goBack", expect = "Favorites", state = """{"items":[]}""")
@@ -49,7 +50,7 @@ class PokedexBehaviorTest : BehaviorTest() {
 
   @Test
   fun `a failed page shows the error, scrolling does not hammer the server, retry recovers`() {
-    session.fixtures.fail("pokemon-list-0", HttpStatusCode.InternalServerError)
+    session.fixtures.failOnce("pokemon-list-0", HttpStatusCode.InternalServerError)
     app.precondition("Language")
     app.act("select", """{"language":"English"}""")
     app.act("continue", expect = "Onboarding")
@@ -59,15 +60,13 @@ class PokedexBehaviorTest : BehaviorTest() {
       state = """{"isLoading":false,"items":[],"error":{"type":"Server","statusCode":500}}""",
     )
     app.act("loadMore", state = """{"isLoading":false,"error":{"type":"Server"}}""")
-
-    session.fixtures.clearFailures()
     app.act("retry", state = """{"isLoading":false,"error":null,"nextOffset":20}""")
   }
 
   @Test
   fun `a missing Pokemon shows not found, retry loads it`() {
+    session.fixtures.failOnce("pokemon-25", HttpStatusCode.NotFound)
     onboard()
-    session.fixtures.fail("pokemon-25", HttpStatusCode.NotFound)
     app.act(
       "open",
       """{"id":25}""",
@@ -75,8 +74,6 @@ class PokedexBehaviorTest : BehaviorTest() {
       state = """{"isLoading":false,"pokemon":null,"error":{"type":"NotFound"}}""",
     )
     app.act("toggleFavorite", state = """{"isFavorite":false,"isSavingFavorite":false}""")
-
-    session.fixtures.clearFailures()
     app.act("retry", state = """{"isLoading":false,"error":null,"pokemon":{"id":25}}""")
   }
 }

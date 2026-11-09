@@ -5,6 +5,8 @@ import androidshowcase.reflex.designsystem.LoadingState
 import androidshowcase.reflex.designsystem.PokeballMark
 import androidshowcase.reflex.designsystem.ReflexTheme
 import androidshowcase.reflex.designsystem.errorMessage
+import androidshowcase.reflex.designsystem.sharedBackground
+import androidshowcase.reflex.designsystem.sharedElement
 import androidshowcase.reflex.domain.model.PokemonDetail
 import androidshowcase.reflex.domain.model.PokemonStat
 import androidshowcase.reflex.feature.pokedex.PokemonDetailViewModel
@@ -86,11 +88,15 @@ fun PokemonDetailScreen(viewModel: PokemonDetailViewModel, onBack: () -> Unit) {
 fun PokemonDetailContent(state: State, onAction: (Action) -> Unit, onBack: () -> Unit) {
   val scheme = MaterialTheme.colorScheme
   val typeColor = state.pokemon?.types?.firstOrNull()?.let(::typeColor)
+  // Until the detail loads, the artwork's color (decoded by the list card) seeds the header, so the card's
+  // background morphs into a header of the same color instead of a grey one.
+  val artworkColor by rememberArtworkColor(state.id)
+  val seed = typeColor ?: artworkColor
   // Darkened a touch in light theme so most types keep white text, more in dark theme.
   val headerTarget = when {
-    typeColor == null -> scheme.surfaceContainerHighest
-    scheme.surface.luminance() < 0.5f -> lerp(typeColor, Color.Black, 0.3f)
-    else -> lerp(typeColor, Color.Black, 0.12f)
+    seed == null -> scheme.surfaceContainerHighest
+    scheme.surface.luminance() < 0.5f -> lerp(seed, Color.Black, 0.3f)
+    else -> lerp(seed, Color.Black, 0.12f)
   }
   val headerColor by animateColorAsState(headerTarget, tween(500), label = "headerColor")
   // Surface provides the content color the body's text inherits (dark mode included).
@@ -120,28 +126,30 @@ private fun Header(
 ) {
   val surface = MaterialTheme.colorScheme.surface
   val pokemon = state.pokemon
-  Box(
-    modifier.fillMaxWidth().drawWithCache {
-      val gradient = Brush.verticalGradient(listOf(color, lerp(color, Color.Black, 0.18f)))
-      val lip = 32.dp.toPx()
-      val sheetTop = Path().apply {
-        addRoundRect(
-          RoundRect(
-            left = 0f,
-            top = size.height - lip,
-            right = size.width,
-            bottom = size.height,
-            topLeftCornerRadius = CornerRadius(lip),
-            topRightCornerRadius = CornerRadius(lip),
-          ),
-        )
-      }
-      onDrawBehind {
-        drawRect(gradient)
-        drawPath(sheetTop, surface)
-      }
-    },
-  ) {
+  Box(modifier.fillMaxWidth()) {
+    // Its own layer: the list card's background morphs into it.
+    Box(
+      Modifier.matchParentSize().sharedBackground(backgroundKey(state.id)).drawWithCache {
+        val gradient = Brush.verticalGradient(listOf(color, lerp(color, Color.Black, 0.18f)))
+        val lip = 32.dp.toPx()
+        val sheetTop = Path().apply {
+          addRoundRect(
+            RoundRect(
+              left = 0f,
+              top = size.height - lip,
+              right = size.width,
+              bottom = size.height,
+              topLeftCornerRadius = CornerRadius(lip),
+              topRightCornerRadius = CornerRadius(lip),
+            ),
+          )
+        }
+        onDrawBehind {
+          drawRect(gradient)
+          drawPath(sheetTop, surface)
+        }
+      },
+    )
     PokeballMark(
       Modifier.size(300.dp).align(Alignment.TopEnd).offset(x = 90.dp, y = 36.dp).rotate(-20f),
       color = contentColor.copy(alpha = 0.14f),
@@ -176,13 +184,16 @@ private fun Header(
           pokemon?.types?.forEach { TypeChip(it, contentColor) }
         }
         Box(Modifier.fillMaxWidth().height(196.dp)) {
-          if (pokemon != null) {
-            AsyncImage(
-              model = pokemon.artworkUrl,
-              contentDescription = pokemon.name.displayName(),
-              modifier = Modifier.size(256.dp).align(Alignment.BottomCenter).offset(y = 56.dp),
-            )
-          }
+          // Shown before the detail loads: it is the element the list's card hands over.
+          AsyncImage(
+            model = state.artworkUrl,
+            contentDescription = pokemon?.name?.displayName(),
+            modifier = Modifier
+              .align(Alignment.BottomCenter)
+              .offset(y = 56.dp)
+              .sharedElement(artworkKey(state.id))
+              .size(256.dp),
+          )
         }
       }
     }
@@ -311,6 +322,6 @@ private fun statLabel(name: String): String = when (name) {
 private fun DetailPreview() = ReflexTheme {
   val stats = listOf(PokemonStat("hp", 35), PokemonStat("attack", 55), PokemonStat("speed", 90))
   val pikachu = PokemonDetail(25, "pikachu", "", "", 4, 60, listOf("electric"), stats)
-  val state = State(id = 25, pokemon = pikachu, isLoading = false, isFavorite = true)
+  val state = State(id = 25, artworkUrl = "", pokemon = pikachu, isLoading = false, isFavorite = true)
   PokemonDetailContent(state, onAction = {}, onBack = {})
 }

@@ -5,6 +5,7 @@ import androidshowcase.reflex.designsystem.LargeHeader
 import androidshowcase.reflex.designsystem.PokeballMark
 import androidshowcase.reflex.designsystem.ReflexTheme
 import androidshowcase.reflex.designsystem.errorMessage
+import androidshowcase.reflex.designsystem.sharedBackground
 import androidshowcase.reflex.domain.error.AppError
 import androidshowcase.reflex.domain.model.PokemonSummary
 import androidshowcase.reflex.feature.pokedex.PokedexViewModel
@@ -47,6 +48,7 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.stringResource
@@ -124,9 +126,16 @@ private fun PokemonCard(pokemon: PokemonSummary, onClick: () -> Unit) {
     onClick = onClick,
     modifier = Modifier.fillMaxWidth().aspectRatio(0.8f),
     shape = MaterialTheme.shapes.large,
-    colors = CardDefaults.cardColors(containerColor = container, contentColor = content),
+    colors = CardDefaults.cardColors(containerColor = Color.Transparent, contentColor = content),
   ) {
     Box(Modifier.fillMaxSize()) {
+      // Its own layer, so it can morph into the detail header's background.
+      Box(
+        Modifier
+          .matchParentSize()
+          .sharedBackground(backgroundKey(pokemon.id))
+          .background(container, MaterialTheme.shapes.large),
+      )
       PokeballMark(
         Modifier.size(132.dp).align(Alignment.BottomEnd).offset(x = 34.dp, y = 34.dp).rotate(-20f),
         color = content.copy(alpha = 0.16f),

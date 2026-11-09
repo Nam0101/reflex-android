@@ -29,7 +29,8 @@ Each step is done when its check holds.
    without any Compose import.
 2. **ViewModel**: extend `ReflexViewModel<State, Action, Message>`. `State` is an immutable `@Serializable` data
    class holding everything the view shows; `Action` is what a user can do (`@Serializable` when it carries input);
-   `Message` wraps `ViewAction(action)` plus effect results. Check: a unit test drives `send` and asserts `state`.
+   `Message` wraps `ViewAction(action)` plus effect results. Check: `update` is pure (no suspend call, no navigation,
+   no service call outside `task` / `stream`), and the behavior test in step 6 drives every `Action`.
 3. **Introspection node**: extend `ViewModelIntrospectionNode`, one `action(...)` per user action, named as a
    camelCase verb (`toggleFavorite`). Check: every button or gesture in the view has a matching node action.
 4. **Register** the screen in three places: `screen<YourRoute> { }` in the feature's Koin module (a new feature also

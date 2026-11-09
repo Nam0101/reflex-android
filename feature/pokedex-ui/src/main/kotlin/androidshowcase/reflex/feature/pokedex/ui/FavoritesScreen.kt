@@ -5,10 +5,12 @@ import androidshowcase.reflex.designsystem.LargeHeader
 import androidshowcase.reflex.designsystem.LoadingState
 import androidshowcase.reflex.designsystem.PokeballMark
 import androidshowcase.reflex.designsystem.ReflexTheme
+import androidshowcase.reflex.designsystem.sharedBackground
 import androidshowcase.reflex.domain.model.PokemonSummary
 import androidshowcase.reflex.feature.pokedex.FavoritesViewModel
 import androidshowcase.reflex.feature.pokedex.FavoritesViewModel.Action
 import androidshowcase.reflex.feature.pokedex.FavoritesViewModel.State
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -35,6 +37,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
@@ -68,7 +71,7 @@ fun FavoritesContent(state: State, onAction: (Action) -> Unit) {
       state.isLoading -> item(contentType = "loading") { LoadingState(Modifier.height(320.dp)) }
 
       error != null && state.items.isEmpty() -> item(contentType = "error") {
-        ErrorState(error, onRetry = {}, Modifier.height(320.dp))
+        ErrorState(error, onRetry = { onAction(Action.Retry) }, Modifier.height(320.dp))
       }
 
       state.items.isEmpty() -> item(contentType = "empty") { EmptyFavorites() }
@@ -88,9 +91,16 @@ private fun FavoriteCard(pokemon: PokemonSummary, onAction: (Action) -> Unit, mo
     onClick = { onAction(Action.Open(pokemon.id)) },
     modifier = modifier.fillMaxWidth().height(104.dp),
     shape = MaterialTheme.shapes.large,
-    colors = CardDefaults.cardColors(containerColor = container, contentColor = content),
+    colors = CardDefaults.cardColors(containerColor = Color.Transparent, contentColor = content),
   ) {
     Box(Modifier.fillMaxSize()) {
+      // Its own layer, so it can morph into the detail header's background.
+      Box(
+        Modifier
+          .matchParentSize()
+          .sharedBackground(backgroundKey(pokemon.id))
+          .background(container, MaterialTheme.shapes.large),
+      )
       PokeballMark(
         Modifier.size(150.dp).align(Alignment.CenterEnd).offset(x = 44.dp).rotate(-20f),
         color = content.copy(alpha = 0.14f),

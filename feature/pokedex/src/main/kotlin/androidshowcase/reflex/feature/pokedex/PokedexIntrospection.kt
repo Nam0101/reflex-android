@@ -40,5 +40,6 @@ class FavoritesViewModelIntrospectionNode(viewModel: FavoritesViewModel) :
   override val actions = listOf(
     action("open", "Open a Pokémon", FavoritesViewModel.Action.Open.serializer()) { send(it) },
     action("remove", "Remove from favorites", FavoritesViewModel.Action.Remove.serializer()) { send(it) },
+    action("retry", "Retry") { send(FavoritesViewModel.Action.Retry) },
   )
 }

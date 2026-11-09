@@ -1,6 +1,7 @@
 package androidshowcase.reflex.data.repository
 
 import androidshowcase.reflex.data.catchingRemote
+import androidshowcase.reflex.data.remote.artworkUrl as officialArtworkUrl
 import androidshowcase.reflex.data.remote.pokemon
 import androidshowcase.reflex.data.remote.pokemonList
 import androidshowcase.reflex.data.remote.toDomain
@@ -28,4 +29,6 @@ class PokemonRepositoryImpl(
   override suspend fun detail(id: Int): Result<PokemonDetail, AppError> = withContext(io) {
     catchingRemote { client.value.pokemon(id).toDomain() }
   }
+
+  override fun artworkUrl(id: Int): String = officialArtworkUrl(id)
 }

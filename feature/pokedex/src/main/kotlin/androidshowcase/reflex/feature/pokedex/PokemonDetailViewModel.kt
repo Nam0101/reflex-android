@@ -21,12 +21,14 @@ class PokemonDetailViewModel(
   private val favorites: FavoritesRepository,
   scope: CoroutineScope,
 ) : ReflexViewModel<PokemonDetailViewModel.State, PokemonDetailViewModel.Action, PokemonDetailViewModel.Message>(
-  State(id = id),
+  State(id = id, artworkUrl = pokemon.artworkUrl(id)),
   scope,
 ) {
   @Serializable
   data class State(
     val id: Int,
+    /** Known from the start, so the screen shows the artwork while the detail loads. */
+    val artworkUrl: String,
     val pokemon: PokemonDetail? = null,
     val isLoading: Boolean = true,
     /** Loading the Pokémon failed. */
