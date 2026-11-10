@@ -5,7 +5,7 @@ import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 
-/** One fresh headless app per test. Any request without a fixture fails the test. */
+/** One fresh headless app per test. A request without a fixture or an unreadable store file fails the test. */
 abstract class BehaviorTest {
   protected lateinit var session: HeadlessSession
   protected lateinit var app: ReflexDriver
@@ -19,8 +19,10 @@ abstract class BehaviorTest {
   @AfterEach
   fun shutdown() {
     val violations = session.fixtures.violations.toList()
+    val storageProblems = session.storageProblems.toList()
     session.close()
     assertTrue(violations.isEmpty()) { "Network requests without a fixture: $violations" }
+    assertTrue(storageProblems.isEmpty()) { "Store files the app could not read: $storageProblems" }
   }
 
   /** First launch up to the loaded Pokédex. */

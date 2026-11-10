@@ -1,6 +1,7 @@
 package androidshowcase.reflex.cli.behavior
 
 import io.ktor.http.HttpStatusCode
+import kotlin.time.Duration.Companion.milliseconds
 import org.junit.jupiter.api.Test
 
 class PokedexBehaviorTest : BehaviorTest() {
@@ -9,7 +10,7 @@ class PokedexBehaviorTest : BehaviorTest() {
     onboard()
     app.precondition("Pokedex", """{"error":null,"nextOffset":20}""")
     app.act("loadMore", state = """{"isLoading":false,"endReached":true,"nextOffset":null}""")
-    app.act("loadMore", state = """{"endReached":true}""")
+    app.ignored("loadMore")
 
     app.act("open", """{"id":25}""", expect = "PokemonDetail", state = """{"isLoading":false,"isFavorite":false}""")
     app.precondition("PokemonDetail", """{"pokemon":{"name":"pikachu","types":["electric"],"heightDecimetres":4}}""")
@@ -50,7 +51,7 @@ class PokedexBehaviorTest : BehaviorTest() {
 
   @Test
   fun `a failed page shows the error, scrolling does not hammer the server, retry recovers`() {
-    session.fixtures.failOnce("pokemon-list-0", HttpStatusCode.InternalServerError)
+    session.fixtures.failOnce("pokemon@limit=20,offset=0", HttpStatusCode.InternalServerError)
     app.precondition("Language")
     app.act("select", """{"language":"English"}""")
     app.act("continue", expect = "Onboarding")
@@ -59,13 +60,13 @@ class PokedexBehaviorTest : BehaviorTest() {
       expect = "Pokedex",
       state = """{"isLoading":false,"items":[],"error":{"type":"Server","statusCode":500}}""",
     )
-    app.act("loadMore", state = """{"isLoading":false,"error":{"type":"Server"}}""")
+    app.ignored("loadMore")
     app.act("retry", state = """{"isLoading":false,"error":null,"nextOffset":20}""")
   }
 
   @Test
   fun `a missing Pokemon shows not found, retry loads it`() {
-    session.fixtures.failOnce("pokemon-25", HttpStatusCode.NotFound)
+    session.fixtures.failOnce("pokemon/25", HttpStatusCode.NotFound)
     onboard()
     app.act(
       "open",
@@ -73,7 +74,30 @@ class PokedexBehaviorTest : BehaviorTest() {
       expect = "PokemonDetail",
       state = """{"isLoading":false,"pokemon":null,"error":{"type":"NotFound"}}""",
     )
-    app.act("toggleFavorite", state = """{"isFavorite":false,"isSavingFavorite":false}""")
+    app.ignored("toggleFavorite")
     app.act("retry", state = """{"isLoading":false,"error":null,"pokemon":{"id":25}}""")
+  }
+
+  @Test
+  fun `a slow server shows the loading state until the Pokemon arrives`() {
+    session.fixtures.delay("pokemon/25", 300.milliseconds)
+    onboard()
+    app.act("open", """{"id":25}""", expect = "PokemonDetail", state = """{"isLoading":true,"pokemon":null}""")
+    app.ignored("retry")
+    app.precondition("PokemonDetail", """{"isLoading":false,"pokemon":{"name":"pikachu"}}""")
+  }
+
+  @Test
+  fun `favorites are listed newest first, by the app's clock`() {
+    onboard()
+    app.act("open", """{"id":1}""", expect = "PokemonDetail", state = """{"isLoading":false}""")
+    app.act("toggleFavorite", state = """{"isFavorite":true,"isSavingFavorite":false}""")
+    app.act("goBack", expect = "Pokedex")
+
+    session.clock.advanceDays(1)
+    app.act("open", """{"id":25}""", expect = "PokemonDetail", state = """{"isLoading":false}""")
+    app.act("toggleFavorite", state = """{"isFavorite":true,"isSavingFavorite":false}""")
+    app.act("goBack", expect = "Pokedex")
+    app.act("selectTab", """{"tab":"Favorites"}""", expect = "Favorites", state = """{"items":[{"id":25},{"id":1}]}""")
   }
 }

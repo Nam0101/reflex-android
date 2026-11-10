@@ -1,5 +1,10 @@
 package androidshowcase.reflex.introspection
 
+import androidshowcase.reflex.viewmodel.Next
+import androidshowcase.reflex.viewmodel.ReflexViewModel
+import androidshowcase.reflex.viewmodel.next
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonElement
@@ -72,5 +77,48 @@ class IntrospectionSessionTest {
     assertFalse(call("not json")["ok"]!!.jsonPrimitive.boolean)
     assertTrue(call("""{"cmd":"do","action":"goBack"}""")["ok"]!!.jsonPrimitive.boolean)
     assertEquals(listOf("back"), calls)
+  }
+
+  private class DoorViewModel :
+    ReflexViewModel<DoorViewModel.State, DoorViewModel.Action, DoorViewModel.Action>(
+      State(),
+      CoroutineScope(Dispatchers.Unconfined),
+    ) {
+    @Serializable
+    data class State(val open: Boolean = false)
+
+    sealed interface Action {
+      data object Open : Action
+    }
+
+    override fun viewAction(action: Action) = action
+
+    override fun update(state: State, message: Action): Next<State, Action> =
+      if (state.open) state.next() else State(open = true).next()
+  }
+
+  private class DoorNode(viewModel: DoorViewModel) :
+    ViewModelIntrospectionNode<DoorViewModel.State, DoorViewModel.Action>(viewModel, DoorViewModel.State.serializer()) {
+    override val name = "Door"
+    override val actions = listOf(action("open", "Open", DoorViewModel.Action.Open))
+  }
+
+  @Test
+  fun `an action the ViewModel ignores is reported, and wait answers when the screen and state are reached`() {
+    val door = DoorNode(DoorViewModel())
+    var idle = false
+    val session = IntrospectionSession(isIdle = { idle }) { door }
+    fun call(line: String) = Json.parseToJsonElement(session.handle(line)).jsonObject
+
+    val timedOut = call("""{"cmd":"wait","screen":"Door","state":{"open":true},"timeoutMs":20}""")
+    assertFalse(timedOut["ok"]!!.jsonPrimitive.boolean)
+    assertEquals("Door", timedOut["name"]!!.jsonPrimitive.content)
+    assertFalse(call("""{"cmd":"wait","timeoutMs":20}""")["ok"]!!.jsonPrimitive.boolean) // never idle
+
+    assertEquals(null, call("""{"cmd":"do","action":"open"}""")["ignored"])
+    assertTrue(call("""{"cmd":"do","action":"open"}""")["ignored"]!!.jsonPrimitive.boolean)
+    assertTrue(call("""{"cmd":"wait","screen":"Door","state":{"open":true}}""")["ok"]!!.jsonPrimitive.boolean)
+    idle = true
+    assertTrue(call("""{"cmd":"wait"}""")["ok"]!!.jsonPrimitive.boolean)
   }
 }

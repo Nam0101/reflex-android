@@ -4,6 +4,7 @@ import androidshowcase.reflex.domain.error.AppError
 import androidshowcase.reflex.domain.model.PokemonDetail
 import androidshowcase.reflex.domain.repository.FavoritesRepository
 import androidshowcase.reflex.domain.repository.PokemonRepository
+import androidshowcase.reflex.introspection.Introspected
 import androidshowcase.reflex.viewmodel.Next
 import androidshowcase.reflex.viewmodel.ReflexViewModel
 import androidshowcase.reflex.viewmodel.next
@@ -15,6 +16,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.map
 import kotlinx.serialization.Serializable
 
+@Introspected
 class PokemonDetailViewModel(
   private val id: Int,
   private val pokemon: PokemonRepository,

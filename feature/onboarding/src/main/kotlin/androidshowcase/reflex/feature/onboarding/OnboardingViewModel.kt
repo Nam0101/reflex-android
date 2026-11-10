@@ -2,6 +2,8 @@ package androidshowcase.reflex.feature.onboarding
 
 import androidshowcase.reflex.domain.error.AppError
 import androidshowcase.reflex.domain.repository.SettingsRepository
+import androidshowcase.reflex.introspection.ActionTitle
+import androidshowcase.reflex.introspection.Introspected
 import androidshowcase.reflex.viewmodel.Next
 import androidshowcase.reflex.viewmodel.ReflexViewModel
 import androidshowcase.reflex.viewmodel.next
@@ -11,6 +13,7 @@ import com.github.michaelbull.result.fold
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.serialization.Serializable
 
+@Introspected
 class OnboardingViewModel(
   private val settings: SettingsRepository,
   private val navigation: OnboardingNavigation,
@@ -30,13 +33,16 @@ class OnboardingViewModel(
   }
 
   sealed interface Action {
+    @ActionTitle("Next page")
     data object Next : Action
 
     /** The user swiped to [page]. */
+    @ActionTitle("Swipe to a page")
     @Serializable
     data class ShowPage(val page: Int) : Action
 
     /** "Get started" on the last page, "Skip" on the others. */
+    @ActionTitle("Get started / Skip")
     data object Finish : Action
   }
 

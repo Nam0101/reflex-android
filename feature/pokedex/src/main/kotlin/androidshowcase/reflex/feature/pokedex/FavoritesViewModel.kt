@@ -3,6 +3,8 @@ package androidshowcase.reflex.feature.pokedex
 import androidshowcase.reflex.domain.error.AppError
 import androidshowcase.reflex.domain.model.PokemonSummary
 import androidshowcase.reflex.domain.repository.FavoritesRepository
+import androidshowcase.reflex.introspection.ActionTitle
+import androidshowcase.reflex.introspection.Introspected
 import androidshowcase.reflex.viewmodel.Next
 import androidshowcase.reflex.viewmodel.ReflexViewModel
 import androidshowcase.reflex.viewmodel.next
@@ -14,6 +16,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.map
 import kotlinx.serialization.Serializable
 
+@Introspected
 class FavoritesViewModel(
   private val favorites: FavoritesRepository,
   private val navigation: PokedexNavigation,
@@ -27,9 +30,11 @@ class FavoritesViewModel(
   )
 
   sealed interface Action {
+    @ActionTitle("Open a Pokémon")
     @Serializable
     data class Open(val id: Int) : Action
 
+    @ActionTitle("Remove from favorites")
     @Serializable
     data class Remove(val id: Int) : Action
 

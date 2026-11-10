@@ -2,7 +2,7 @@ package androidshowcase.reflex.shell
 
 import androidshowcase.reflex.domain.model.LaunchStep
 import androidshowcase.reflex.domain.usecase.ResolveLaunchStep
-import androidshowcase.reflex.introspection.ViewModelIntrospectionNode
+import androidshowcase.reflex.introspection.Introspected
 import androidshowcase.reflex.navigation.Route
 import androidshowcase.reflex.viewmodel.Next
 import androidshowcase.reflex.viewmodel.ReflexViewModel
@@ -15,6 +15,7 @@ import kotlinx.serialization.Serializable
 data object SplashRoute : Route
 
 /** Decides the first screen. While it is on top, Android keeps the system splash screen up. */
+@Introspected
 class SplashViewModel(
   private val resolveLaunchStep: ResolveLaunchStep,
   private val onResolved: (LaunchStep) -> Unit,
@@ -39,10 +40,4 @@ class SplashViewModel(
       },
     )
   }
-}
-
-class SplashViewModelIntrospectionNode(viewModel: SplashViewModel) :
-  ViewModelIntrospectionNode<SplashViewModel.State, Nothing>(viewModel, SplashViewModel.State.serializer()) {
-  override val name = "Splash"
-  override val actions = emptyList<androidshowcase.reflex.introspection.IntrospectionAction>()
 }

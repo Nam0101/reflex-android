@@ -2,7 +2,7 @@
 # Renames the base package and applicationId for a new project, e.g.
 #   scripts/rename-package.sh com.example.myapp
 # Moves every src/*/kotlin/androidshowcase/reflex tree, the Room schema folder, and rewrites the
-# package in Kotlin, Gradle, XML, ProGuard, properties, Markdown and Compose config files.
+# package in Kotlin, Gradle, XML, ProGuard, properties, Markdown, Compose config and service-loader files.
 # Run it on a clean working tree, then ./gradlew clean test assembleDebug.
 set -euo pipefail
 
@@ -43,7 +43,8 @@ while IFS= read -r -d '' file; do
     OLD="$OLD" NEW="$NEW" perl -pi -e 's/\Q$ENV{OLD}\E/$ENV{NEW}/g' "$file"
   fi
 done < <(find . \( "${PRUNE[@]}" \) -prune -o -type f \( -name '*.kt' -o -name '*.kts' -o -name '*.xml' \
-  -o -name '*.pro' -o -name '*.properties' -o -name '*.md' -o -name '*.conf' \) -print0)
+  -o -name '*.pro' -o -name '*.properties' -o -name '*.md' -o -name '*.conf' -o -path '*/META-INF/services/*' \) \
+  -print0)
 
 # Keep this script reusable for a later rename.
 OLD="$OLD" NEW="$NEW" perl -pi -e 's/^OLD="\Q$ENV{OLD}\E"/OLD="$ENV{NEW}"/' "$0"

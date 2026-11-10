@@ -29,16 +29,16 @@ class DeepLinkBehaviorTest : BehaviorTest() {
     onboard()
     app.act("selectTab", """{"tab":"Favorites"}""", expect = "Favorites")
     app.act("openDeepLink", """{"uri":"reflex://pokemon/25"}""", expect = "PokemonDetail", state = """{"id":25}""")
-    val saved = checkNotNull(session.app.saveNavigation())
+    val saved = checkNotNull(session.onMain { saveNavigation() })
     app.act("goBack", expect = "Favorites")
 
     // The same process ignores its own snapshot (an Activity recreated by a rotation): nothing reopens.
-    session.app.restoreNavigation(saved)
+    session.onMain { restoreNavigation(saved) }
     app.precondition("Favorites")
 
     session.relaunch()
-    session.app.restoreNavigation("not a snapshot")
-    session.app.restoreNavigation(saved)
+    session.onMain { restoreNavigation("not a snapshot") }
+    session.onMain { restoreNavigation(saved) }
     app.precondition("PokemonDetail", """{"id":25,"isLoading":false}""")
     app.act("goBack", expect = "Favorites")
   }

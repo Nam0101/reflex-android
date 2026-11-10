@@ -83,7 +83,7 @@ Core (`ResolveLaunchStep`) behind the system splash screen. Each card takes the 
 
 - **Core** holds the whole app. `:shell` is the composition root: it loads the Koin modules (`dataModule` plus one
   per feature), creates a ViewModel per route, owns the navigators and handles deep links.
-- **Mobile** is thin. `:app` provides the platform (Room builder, settings file, locale switching), renders the
+- **Mobile** is thin. `:app` provides the platform (Room builder, storage directory, locale switching), renders the
   navigator with Navigation 3 and binds each screen to its ViewModel.
 - **CLI** is the second front end. It runs the real Core headless with HTTP fixtures, or talks to a debug build
   over an abstract socket forwarded by adb.
@@ -95,6 +95,7 @@ Core (`ResolveLaunchStep`) behind the system splash screen. Each card takes the 
 </p>
 
 ```kotlin
+@Introspected // KSP generates the introspection node: one CLI action per Action subclass
 class FavoritesViewModel(
   private val favorites: FavoritesRepository,
   private val navigation: PokedexNavigation,
@@ -125,22 +126,14 @@ class FavoritesViewModel(
 }
 ```
 
-The view only renders and forwards, and the introspection node exposes the same actions to the CLI:
+The view only renders and forwards; the generated introspection node exposes the same actions to the CLI
+(`open`, `remove`), so nothing is written twice:
 
 ```kotlin
 @Composable
 fun FavoritesScreen(viewModel: FavoritesViewModel) {
   val state by viewModel.state.collectAsStateWithLifecycle()
   FavoritesContent(state, viewModel::send) // stateless, previewable
-}
-
-class FavoritesViewModelIntrospectionNode(viewModel: FavoritesViewModel) :
-  ViewModelIntrospectionNode<State, Action>(viewModel, State.serializer()) {
-  override val name = "Favorites"
-  override val actions = listOf(
-    action("open", "Open a Pokémon", Action.Open.serializer()) { send(it) },
-    action("remove", "Remove from favorites", Action.Remove.serializer()) { send(it) },
-  )
 }
 ```
 
@@ -163,7 +156,9 @@ fun `favorites survive a relaunch and can be removed from the list`() {
 }
 ```
 
-State is matched as a JSON subset and polled until it holds. Any HTTP request without a fixture fails the test.
+State is matched as a JSON subset and awaited until it holds. `act` fails when the app ignores the action;
+`ignored` and `refused` assert the two ways an action can go nowhere. Any HTTP request without a fixture fails the
+test, time only moves with `session.clock.advanceDays(n)`, and a fixture can `failOnce` or `delay`.
 Break the "remove" behavior and the test tells you exactly where the journey went wrong:
 
 ```text
@@ -218,19 +213,29 @@ ls
 do select {"language":"English"}
 do continue
 do finish
+wait Pokedex {"isLoading":false}
 do open {"id":25}
+advance 1d                                        # the app's clock; relaunch restarts it on the same disk
 ```
+
+Every command answers once the app is idle again, so the same lines can be piped in from a script without sleeps.
+`do` answers `"ignored":true` when the app accepted the action and did nothing. Fixtures are files named after their
+request (`fixtures/pokeapi.co/api/v2/pokemon/25.json`); `reflex headless --record <dir>` saves the missing ones from
+the real server.
 
 Against a debug build on a device or emulator:
 
 ```bash
-adb forward tcp:7171 localabstract:androidshowcase.reflex.introspection
 cli/build/install/reflex/bin/reflex ls
 cli/build/install/reflex/bin/reflex do toggleFavorite
+cli/build/install/reflex/bin/reflex wait PokemonDetail '{"isFavorite":true}'
+cli/build/install/reflex/bin/reflex screenshot detail.png
+cli/build/install/reflex/bin/reflex reset          # clear data, start again, wait for the first screen
 ```
 
-`do` returns once the action is dispatched; disk, network and navigation finish asynchronously, so read the result
-with `ls`. The introspection socket exists only in debug builds.
+The CLI runs `adb forward` itself, to the socket `<applicationId>.introspection`: add `--package <applicationId>`
+when the installed variant has another id (a flavor or build type suffix). On a device `do` returns once the action
+is dispatched; follow it with `wait`. The introspection socket exists only in debug builds.
 
 ## Project structure
 
@@ -242,6 +247,7 @@ reflex-android
 │   ├── data/               Ktor PokeAPI client, Room 3, DataStore, error mapping     (JVM)
 │   ├── viewmodel/          ReflexViewModel, effects, Stack/TabNavigator              (JVM)
 │   ├── introspection/      nodes, typed actions, JSON schema, NDJSON session         (JVM)
+│   ├── introspection-processor/  KSP: generates the node of each @Introspected ViewModel (build time)
 │   └── designsystem/       Material 3 theme, Be Vietnam Pro, Poké Ball mark, states  (Android)
 ├── feature/
 │   ├── onboarding/         language + onboarding ViewModels and nodes                (JVM)
@@ -273,8 +279,8 @@ Min SDK 26, target and compile SDK 37. Versions live in [`gradle/libs.versions.t
 ## Adding a feature
 
 1. Route + ViewModel (`State`, `Action`, `Message`, pure `update`) in a JVM feature module.
-2. An introspection node with one action per user action.
-3. Register it with `screen<Route> { }` in the feature's Koin module, in `resolveNode` and in the Compose host.
+2. `@Introspected` on the ViewModel: KSP generates its introspection node, one action per `Action` subclass.
+3. Register it with `screen<Route> { }` in the feature's Koin module and in the Compose host.
 4. A stateless Compose screen in the feature's `-ui` module.
 5. A behavior test that walks the journey, with fixtures for its HTTP calls.
 
@@ -284,7 +290,7 @@ Min SDK 26, target and compile SDK 37. Versions live in [`gradle/libs.versions.t
 
 - **Koin at the edge.** `Platform` (what Android provides) → `dataModule` (data) → one module per feature
   (screens), loaded into a `koinApplication` each `ReflexApp` owns. ViewModels keep plain constructors and never
-  call Koin; there is no global instance and no generated code.
+  call Koin; there is no global instance and no generated DI code.
 - **JVM, not KMP.** Core modules are Kotlin/JVM so they run headless and in plain JUnit. Moving them to
   Kotlin Multiplatform later is mostly a build change.
 - **Process death.** The first screen always comes from launch rules (language chosen? onboarding done?). Once on

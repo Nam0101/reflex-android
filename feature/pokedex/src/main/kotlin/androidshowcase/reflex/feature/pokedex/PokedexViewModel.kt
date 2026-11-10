@@ -4,6 +4,8 @@ import androidshowcase.reflex.domain.error.AppError
 import androidshowcase.reflex.domain.model.Page
 import androidshowcase.reflex.domain.model.PokemonSummary
 import androidshowcase.reflex.domain.repository.PokemonRepository
+import androidshowcase.reflex.introspection.ActionTitle
+import androidshowcase.reflex.introspection.Introspected
 import androidshowcase.reflex.viewmodel.Next
 import androidshowcase.reflex.viewmodel.ReflexViewModel
 import androidshowcase.reflex.viewmodel.next
@@ -13,6 +15,7 @@ import com.github.michaelbull.result.fold
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.serialization.Serializable
 
+@Introspected
 class PokedexViewModel(
   private val pokemon: PokemonRepository,
   private val navigation: PokedexNavigation,
@@ -31,10 +34,12 @@ class PokedexViewModel(
 
   sealed interface Action {
     /** The list scrolled near its end. Ignored while loading, after the end, or while an error shows. */
+    @ActionTitle("Scroll to the end")
     data object LoadMore : Action
 
     data object Retry : Action
 
+    @ActionTitle("Open a Pokémon")
     @Serializable
     data class Open(val id: Int) : Action
   }

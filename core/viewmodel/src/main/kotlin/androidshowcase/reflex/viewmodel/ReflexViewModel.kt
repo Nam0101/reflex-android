@@ -33,11 +33,13 @@ abstract class ReflexViewModel<State : Any, Action : Any, Message : Any>(
   private val scope = CoroutineScope(parentScope.coroutineContext + SupervisorJob(parentScope.coroutineContext[Job]))
   private val mutableState = MutableStateFlow(initialState)
   private val streams = ConcurrentHashMap<Any, Job>()
+  private val activity = parentScope.coroutineContext[EffectActivity]
   private val started = AtomicBoolean(false)
 
   val state: StateFlow<State> = mutableState.asStateFlow()
 
-  fun send(action: Action) = dispatch(viewAction(action))
+  /** Returns false when [update] ignored the action: it returned the same state and no effect. */
+  fun send(action: Action): Boolean = dispatch(viewAction(action))
 
   /** Wraps a public action into the internal message type, by convention `Message.ViewAction(action)`. */
   protected abstract fun viewAction(action: Action): Message
@@ -57,21 +59,41 @@ abstract class ReflexViewModel<State : Any, Action : Any, Message : Any>(
 
   override fun close() = scope.cancel()
 
-  private fun dispatch(message: Message) {
+  private fun dispatch(message: Message): Boolean {
     var effects: List<Effect<Message>> = emptyList()
-    mutableState.update { current -> update(current, message).also { effects = it.effects }.state }
+    var changed = false
+    mutableState.update { current ->
+      val next = update(current, message)
+      effects = next.effects
+      changed = next.state != current
+      next.state
+    }
     effects.forEach(::run)
+    return changed || effects.isNotEmpty()
   }
 
   private fun run(effect: Effect<Message>) {
     when (effect) {
-      is Effect.Task -> scope.launch { effect.block()?.let(::dispatch) }
+      is Effect.Task -> {
+        val done = activity?.begin()
+        scope.launch { effect.block()?.let(::dispatch) }.invokeOnCompletion { done?.invoke() }
+      }
 
       is Effect.Stream -> {
-        val job = scope.launch(start = CoroutineStart.LAZY) { effect.flow.collect(::dispatch) }
+        // A stream counts as busy until its first value: the screen is still loading until then.
+        val done = activity?.begin()
+        val job = scope.launch(start = CoroutineStart.LAZY) {
+          effect.flow.collect {
+            dispatch(it)
+            done?.invoke()
+          }
+        }
         streams.put(effect.key, job)?.cancel()
         // A stream that ended is forgotten, unless a newer one already took its key.
-        job.invokeOnCompletion { streams.remove(effect.key, job) }
+        job.invokeOnCompletion {
+          streams.remove(effect.key, job)
+          done?.invoke()
+        }
         job.start()
       }
 

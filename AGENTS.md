@@ -32,23 +32,37 @@ Each step is done when its check holds.
    class holding everything the view shows; `Action` is what a user can do (`@Serializable` when it carries input);
    `Message` wraps `ViewAction(action)` plus effect results. Check: `update` is pure (no suspend call, no navigation,
    no service call outside `task` / `stream`), and the behavior test in step 6 drives every `Action`.
-3. **Introspection node**: extend `ViewModelIntrospectionNode`, one `action(...)` per user action, named as a
-   camelCase verb (`toggleFavorite`). Check: every button or gesture in the view has a matching node action.
-4. **Register** the screen in three places: `screen<YourRoute> { }` in the feature's Koin module (a new feature also
-   adds its module to `modules(...)` in `ReflexApp` and its navigation port to `AppNavigation`), `resolveNode` in
-   `shell/AppIntrospection.kt`, and `ScreenContent` (or `HomeTabs`) in `app/.../ui/ReflexHost.kt`. Check:
-   `reflex headless`, then `ls` on the screen, prints its name, state and actions.
+3. **Introspection**: annotate the ViewModel with `@Introspected`. KSP generates its node and registers it: one
+   action per `Action` subclass, named after it (`ToggleFavorite` → `toggleFavorite`); add `@ActionTitle("…")` when
+   the words of the name are not what the user sees. Never write a node by hand. Check: every button or gesture
+   in the view is an `Action` subclass, named as a verb.
+4. **Register** the screen in two places: `screen<YourRoute> { }` in the feature's Koin module, and `ScreenContent`
+   (or `HomeTabs`) in `app/.../ui/ReflexHost.kt`. A new feature also adds its module to `modules(...)` in
+   `ReflexApp`, its navigation port to `AppNavigation`, and the KSP plugin with
+   `ksp(projects.core.introspectionProcessor)` to its `build.gradle.kts`. Check: `WiringTest` in `:cli:test` is
+   green, and `reflex headless`, then `ls` on the screen, prints its name, state and actions.
 5. **View** in the feature's `-ui` module: a binding composable that collects `state` with
    `collectAsStateWithLifecycle`, and a stateless `XxxContent(state, onAction)` with a `@Preview`. Check: the view
    holds no logic beyond layout; strings exist in `values` and `values-vi`.
-6. **Behavior test** in `cli/src/test/.../behavior`: a user journey through `precondition` / `act` / `refused`,
-   asserting JSON subsets of state. Every HTTP call needs a fixture in `cli/src/main/resources/fixtures`
-   (`FixtureHttp` maps requests to file names). Check: `./gradlew :cli:test` green, and the test goes red when you
-   break the behavior it covers.
+6. **Behavior test** in `cli/src/test/.../behavior`: a user journey through `precondition` / `act` / `ignored` /
+   `refused`, asserting JSON subsets of state. `act` fails when the app ignores the action (`update` returned the
+   same state and no effect); assert that with `ignored`. Every HTTP call needs a fixture file named after its
+   request under `cli/src/main/resources/fixtures` (`FixtureHttp` documents the naming; `reflex headless --record`
+   saves one from the real server). Check: `./gradlew :cli:test` green, and the test goes red when you break the
+   behavior it covers.
 
 ## Gotchas
 
 - An unmatched HTTP request in a headless run is a test failure (`fixtures.violations`), not a skipped call.
+  So is a store file the app could not read (`session.storageProblems`).
+- Time and chance are services: take `kotlin.time.Clock` / `kotlin.random.Random` through the constructor (Koin
+  binds `Platform.clock` and `Platform.random`), never `Clock.System` or `Random.Default` in Core. Behavior tests
+  move time with `session.clock.advanceDays(n)`; the headless random is seeded.
+- Persisted values that are not rows go in a typed store: `createProtoStore` with a `@Serializable` class whose
+  fields carry `@ProtoNumber`s (`SettingsProto` lists the evolution rules). An unreadable file is moved to
+  `<file>.corrupt` and reported through `Platform.onStorageProblem`; a format change ships a `DataMigration`.
+- `IntrospectionSession.await` without a screen waits for running effects only; a value a stream delivers after
+  a write is not counted. In tests, wait for a screen and state (`act`, `precondition`), not for idle.
 - The introspection server exists only in `app/src/debug`; `app/src/release/.../DebugTools.kt` is its no-op twin.
   Change both signatures together. The abstract socket is reachable by any app on the device: keep it debug-only.
 - Room schemas are exported to `core/data/schemas` and committed. A schema change bumps the database version and
@@ -71,4 +85,8 @@ Each step is done when its check holds.
 
 - `./gradlew test` runs unit and behavior tests (JUnit 6); `./gradlew :cli:test` runs the behavior tests only.
 - `./gradlew spotlessApply` formats (ktlint, 120 columns); `spotlessCheck` runs in verification.
-- `./gradlew :cli:installDist`, then `cli/build/install/reflex/bin/reflex headless`, gives an interactive headless app.
+- `./gradlew :cli:installDist`, then `cli/build/install/reflex/bin/reflex headless`, gives an interactive headless
+  app: `ls`, `do <action> [json]`, `wait [screen [json]]`, `advance 1d`, `relaunch`. Each command answers once the
+  app is idle, so a script can pipe its lines in without sleeping.
+- On a device (debug build): `reflex ls|do|wait|screenshot|reset --package <applicationId>`. The CLI runs
+  `adb forward` to `<applicationId>.introspection` itself; pass the id of the variant you installed.

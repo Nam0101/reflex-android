@@ -4,7 +4,6 @@ import android.app.Application
 import android.content.Context
 import android.util.Log
 import androidshowcase.reflex.data.local.ReflexDatabase
-import androidshowcase.reflex.data.local.SETTINGS_FILE_NAME
 import androidshowcase.reflex.data.remote.createOkHttpClient
 import androidshowcase.reflex.data.remote.okHttpEngine
 import androidshowcase.reflex.domain.platform.LanguageApplier
@@ -51,7 +50,8 @@ val Context.reflexApp: ReflexApp get() = (applicationContext as ReflexApplicatio
 private fun androidPlatform(context: Context, okHttp: Lazy<OkHttpClient>) = Platform(
   uiScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate),
   databaseBuilder = { Room.databaseBuilder<ReflexDatabase>(context, ReflexDatabase.FILE_NAME) },
-  settingsFile = File(context.filesDir, SETTINGS_FILE_NAME).absolutePath,
+  storageDir = context.filesDir.absolutePath,
+  onStorageProblem = { Log.e("Storage", "Unreadable store file, starting from defaults: $it", it.cause) },
   languageApplier = AppCompatLanguageApplier,
   httpEngine = { okHttpEngine(okHttp.value) },
   httpLogger = if (BuildConfig.DEBUG) { message -> Log.d("Http", message) } else null,

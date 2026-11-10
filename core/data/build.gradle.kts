@@ -25,6 +25,9 @@ dependencies {
   api(libs.androidx.room3.runtime)
   implementation(libs.androidx.sqlite.bundled)
   ksp(libs.androidx.room3.compiler)
+  implementation(libs.androidx.datastore.core.okio)
+  implementation(libs.kotlinx.serialization.protobuf)
+  // Only to import the legacy settings.preferences_pb, see SettingsStore.
   implementation(libs.androidx.datastore.preferences.core)
 
   testImplementation(libs.ktor.client.mock)

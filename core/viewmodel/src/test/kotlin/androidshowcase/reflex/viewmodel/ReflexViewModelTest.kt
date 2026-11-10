@@ -24,6 +24,8 @@ class ReflexViewModelTest {
       data object Load : Action
 
       data object StopTicks : Action
+
+      data object Ignore : Action
     }
 
     sealed interface Message {
@@ -45,6 +47,7 @@ class ReflexViewModelTest {
         Action.Increment -> state.copy(count = state.count + 1).next()
         Action.Load -> state.next(task { Message.Loaded(42) })
         Action.StopTicks -> state.next(Effect.Cancel("ticks"))
+        Action.Ignore -> state.next()
       }
 
       is Message.Loaded -> state.copy(loaded = message.value).next()
@@ -86,6 +89,28 @@ class ReflexViewModelTest {
     vm.send(CounterViewModel.Action.Load)
     advanceUntilIdle()
     assertEquals(null, vm.state.value.loaded)
+  }
+
+  @Test
+  fun `send tells whether update did anything, and the scope's activity is busy until effects end`() = runTest {
+    val activity = EffectActivity()
+    val ticks = MutableSharedFlow<Int>()
+    val vm = CounterViewModel(CoroutineScope(StandardTestDispatcher(testScheduler) + activity), ticks)
+    assertEquals(false, vm.send(CounterViewModel.Action.Ignore))
+    assertEquals(true, vm.send(CounterViewModel.Action.Increment))
+    assertEquals(true, activity.isIdle)
+
+    assertEquals(true, vm.send(CounterViewModel.Action.Load)) // same state, but a task runs
+    assertEquals(false, activity.isIdle)
+    advanceUntilIdle()
+    assertEquals(true, activity.isIdle)
+
+    vm.start() // one task, and a stream that is busy until its first value
+    advanceUntilIdle()
+    assertEquals(false, activity.isIdle)
+    ticks.emit(1)
+    advanceUntilIdle()
+    assertEquals(true, activity.isIdle)
   }
 }
 
