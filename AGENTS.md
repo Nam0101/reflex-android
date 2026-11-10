@@ -12,11 +12,12 @@ README.md has the module map and commands.
   (see `LanguageApplier`) and implement it in `:app` (`ReflexApplication.androidPlatform`).
 - Navigation is Core state. `StackNavigator` / `TabNavigator` own the screens; Compose only draws them with
   Navigation 3. A ViewModel navigates by calling its feature's navigation interface (`PokedexNavigation`) from an
-  effect; `ReflexApp` implements those interfaces.
+  effect; `AppNavigation` in the shell implements those interfaces.
 - `update(state, message)` is pure: it returns the next state plus effects (`task`, `stream`, `Effect.Cancel`).
   Every suspend call and side effect runs inside an effect and reports back as a `Message`.
-- Errors are values: repositories return `Result<T, AppError>`; `catchingRemote` / `catchingLocal` rethrow
-  `CancellationException`. State exposes `AppError?`; views map it to text with `errorMessage`.
+- Errors are values: repositories return `Result<T, AppError>`; `catchingRemote` / `catchingLocal` (and
+  `Flow.catchingLocal()`) rethrow `CancellationException` and fatal errors (`nonFatalOrThrow`). State exposes
+  `AppError?`; views map it to text with `errorMessage`.
 - Dependencies are constructor parameters, wired with the Koin DSL: data and platform ports in
   `shell/DataModule.kt`, screens in each feature's module (`pokedexModule`) with `screen<Route> { }`. ViewModels
   never call Koin, so tests construct them by hand. Each `ReflexApp` owns a `koinApplication`; never `startKoin`.
@@ -25,8 +26,8 @@ README.md has the module map and commands.
 
 Each step is done when its check holds.
 
-1. **Route**: a `data object` / `data class` implementing `Route` in the feature's Core module. Check: it compiles
-   without any Compose import.
+1. **Route**: a `@Serializable` `data object` / `data class` implementing `Route` in the feature's Core module
+   (the stack is saved across process death). Check: it compiles without any Compose import.
 2. **ViewModel**: extend `ReflexViewModel<State, Action, Message>`. `State` is an immutable `@Serializable` data
    class holding everything the view shows; `Action` is what a user can do (`@Serializable` when it carries input);
    `Message` wraps `ViewAction(action)` plus effect results. Check: `update` is pure (no suspend call, no navigation,
@@ -34,9 +35,9 @@ Each step is done when its check holds.
 3. **Introspection node**: extend `ViewModelIntrospectionNode`, one `action(...)` per user action, named as a
    camelCase verb (`toggleFavorite`). Check: every button or gesture in the view has a matching node action.
 4. **Register** the screen in three places: `screen<YourRoute> { }` in the feature's Koin module (a new feature also
-   adds its module to `modules(...)` in `ReflexApp`), `resolveNode` in `shell/AppIntrospection.kt`, and
-   `ScreenContent` (or `HomeTabs`) in `app/.../ui/ReflexHost.kt`. Check: `reflex headless`, then `ls` on the
-   screen, prints its name, state and actions.
+   adds its module to `modules(...)` in `ReflexApp` and its navigation port to `AppNavigation`), `resolveNode` in
+   `shell/AppIntrospection.kt`, and `ScreenContent` (or `HomeTabs`) in `app/.../ui/ReflexHost.kt`. Check:
+   `reflex headless`, then `ls` on the screen, prints its name, state and actions.
 5. **View** in the feature's `-ui` module: a binding composable that collects `state` with
    `collectAsStateWithLifecycle`, and a stateless `XxxContent(state, onAction)` with a `@Preview`. Check: the view
    holds no logic beyond layout; strings exist in `values` and `values-vi`.
@@ -57,6 +58,11 @@ Each step is done when its check holds.
 - `ReflexViewModel` effects run on the scope passed in (`Dispatchers.Main.immediate` on Android, one
   `reflex-main` thread headless). Blocking I/O belongs in repositories, which switch to `Dispatchers.IO`.
 - `runCatching` around suspend code swallows cancellation: use the `catching*` helpers in `core:data`.
+- After process death only navigation comes back: `MainActivity` saves `ReflexApp.saveNavigation()` (the routes
+  over Home and the selected tab) and hands it to `restoreNavigation`. Screens are created again from their
+  routes and reload their data, so a route must carry everything its screen needs to start.
+- The Android app has one `OkHttpClient` (`ReflexApplication.okHttp`): Ktor uses it with a disk HTTP cache, Coil
+  shares its connection pool without that cache. Build it lazily; never touch it on the main thread.
 - Koin modules are functions (`fun pokedexModule() = module { }`), not `val`s: a module object holds its singles'
   instances, so two live `ReflexApp`s loading the same `val` (an unclosed headless session and the next one) would
   share one HTTP client and database. `allowOverride(false)` makes a route registered twice fail at startup.

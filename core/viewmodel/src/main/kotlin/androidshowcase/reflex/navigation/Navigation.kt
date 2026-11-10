@@ -1,6 +1,9 @@
 package androidshowcase.reflex.navigation
 
-/** A destination. Features declare their routes; the shell's [ScreenFactory] turns each into a model. */
+/**
+ * A destination. Features declare their routes as `@Serializable` types (the stack is saved across process
+ * death); the shell's [ScreenFactory] turns each into a model.
+ */
 interface Route
 
 /** Anything a navigator hosts: a screen ViewModel (leaf) or another navigator (container). */

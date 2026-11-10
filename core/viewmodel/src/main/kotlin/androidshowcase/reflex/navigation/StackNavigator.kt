@@ -35,6 +35,9 @@ class StackNavigator(private val factory: ScreenFactory) : ScreenModel {
 
   fun replaceAll(vararg routes: Route) = mutate { routes.map(::screen) }
 
+  /** Puts [routes] over the root screen, which stays alive with its state; everything else is closed. */
+  fun replaceAboveRoot(vararg routes: Route) = mutate { it.take(1) + routes.map(::screen) }
+
   override fun close() = synchronized(lock) { mutableScreens.value }.forEach { it.model.close() }
 
   private fun screen(route: Route) = Screen("${route::class.simpleName}#${nextKey++}", route, factory.create(route))

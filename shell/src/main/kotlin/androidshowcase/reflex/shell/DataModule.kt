@@ -32,6 +32,9 @@ internal fun dataModule(platform: Platform): Module = module {
   single(StorageScope) { CoroutineScope(SupervisorJob() + Dispatchers.IO) } onClose { it?.cancel() }
 
   single<PokemonRepository> { PokemonRepositoryImpl(inject()) }
-  single<FavoritesRepository> { FavoritesRepositoryImpl(get<ReflexDatabase>().favoriteDao()) }
+  single<FavoritesRepository> {
+    val database = inject<ReflexDatabase>()
+    FavoritesRepositoryImpl(lazy { database.value.favoriteDao() })
+  }
   single<SettingsRepository> { createSettingsRepository(platform.settingsFile, get(StorageScope)) }
 }

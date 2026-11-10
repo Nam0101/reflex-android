@@ -11,6 +11,7 @@ import androidshowcase.reflex.viewmodel.task
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.serialization.Serializable
 
+@Serializable
 data object SplashRoute : Route
 
 /** Decides the first screen. While it is on top, Android keeps the system splash screen up. */

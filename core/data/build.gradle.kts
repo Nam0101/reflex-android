@@ -15,7 +15,8 @@ dependencies {
   api(projects.core.domain)
 
   api(libs.ktor.client.core)
-  implementation(libs.ktor.client.okhttp)
+  // api: platforms build the OkHttpClient they share between the API client and their image loader.
+  api(libs.ktor.client.okhttp)
   implementation(libs.ktor.client.content.negotiation)
   implementation(libs.ktor.client.logging)
   implementation(libs.ktor.serialization.kotlinx.json)

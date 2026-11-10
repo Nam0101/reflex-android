@@ -70,6 +70,8 @@ abstract class ReflexViewModel<State : Any, Action : Any, Message : Any>(
       is Effect.Stream -> {
         val job = scope.launch(start = CoroutineStart.LAZY) { effect.flow.collect(::dispatch) }
         streams.put(effect.key, job)?.cancel()
+        // A stream that ended is forgotten, unless a newer one already took its key.
+        job.invokeOnCompletion { streams.remove(effect.key, job) }
         job.start()
       }
 

@@ -65,6 +65,7 @@ dependencies {
   implementation(libs.androidx.navigation3.runtime)
   implementation(libs.androidx.navigation3.ui)
   implementation(libs.androidx.profileinstaller)
+  implementation(libs.bundles.coil)
   implementation(libs.kotlinx.coroutines.android)
 
   baselineProfile(projects.benchmark)

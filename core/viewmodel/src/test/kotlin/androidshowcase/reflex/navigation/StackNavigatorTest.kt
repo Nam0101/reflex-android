@@ -2,6 +2,7 @@ package androidshowcase.reflex.navigation
 
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Test
 
 class StackNavigatorTest {
@@ -44,5 +45,20 @@ class StackNavigatorTest {
     navigator.replaceAll(Page("a"), Page("c"))
     assertEquals(1, a.closed)
     assertEquals(2, navigator.screens.value.map { it.key }.toSet().size)
+  }
+
+  @Test
+  fun `replaceAboveRoot keeps the root screen alive and closes the rest`() {
+    navigator.replaceAll(Page("a"))
+    navigator.push(Page("b"))
+    val root = navigator.screens.value.first()
+
+    navigator.replaceAboveRoot(Page("c"))
+
+    assertSame(root, navigator.screens.value.first())
+    assertEquals(listOf(Page("a"), Page("c")), navigator.screens.value.map { it.route })
+    assertEquals(0, models.getValue(Page("a")).closed)
+    assertEquals(1, models.getValue(Page("b")).closed)
+    assertEquals(1, models.getValue(Page("c")).started)
   }
 }

@@ -60,7 +60,7 @@ This template applies that idea to a modern Android stack, with Clean Architectu
 | 🤖 **Agent-ready** | [`AGENTS.md`](AGENTS.md) recipe for new screens; agents can operate and verify the real app via the CLI. |
 | 🎨 **Compose + Material 3** | Cards colored from each artwork (Palette), type-colored detail, animated stats, dark theme, edge-to-edge, per-app language (English / Tiếng Việt). |
 | 💾 **Data** | Ktor + kotlinx.serialization, Room 3 with the bundled SQLite driver, DataStore, `Result<T, AppError>`. |
-| ⚡ **Performance** | Baseline Profile + startup Macrobenchmark, Compose stability config, R8 with resource shrinking. |
+| ⚡ **Performance** | Baseline + startup profiles, startup and scroll Macrobenchmarks, HTTP disk cache, Compose stability config, R8 with resource shrinking. |
 | 🧰 **Tooling** | `build-logic` convention plugins, version catalog, Spotless/ktlint, GitHub Actions, package rename script. |
 
 ## Screenshots
@@ -251,7 +251,7 @@ reflex-android
 ├── shell/                  ReflexApp: composition root, navigation, deep links       (JVM)
 ├── app/                    Activity, Navigation 3 host, platform, debug socket       (Android)
 ├── cli/                    headless runner, socket client, fixtures, behavior tests  (JVM)
-├── benchmark/              Baseline Profile generator, startup benchmark             (Android)
+├── benchmark/              Baseline Profile generator, startup + scroll benchmarks   (Android)
 └── scripts/rename-package.sh
 ```
 
@@ -287,8 +287,9 @@ Min SDK 26, target and compile SDK 37. Versions live in [`gradle/libs.versions.t
   call Koin; there is no global instance and no generated code.
 - **JVM, not KMP.** Core modules are Kotlin/JVM so they run headless and in plain JUnit. Moving them to
   Kotlin Multiplatform later is mostly a build change.
-- **Process death.** Navigation is rebuilt from launch rules (language chosen? onboarding done?) instead of being
-  restored screen by screen.
+- **Process death.** The first screen always comes from launch rules (language chosen? onboarding done?). Once on
+  Home, the routes above it and the selected tab are kept in saved instance state (`ReflexApp.saveNavigation`) and
+  reopened; screens reload their data instead of restoring their state.
 - **Debug-only socket.** Any app on a device can reach an abstract socket, so the introspection server ships only
   in debug builds; release has a no-op twin.
 
