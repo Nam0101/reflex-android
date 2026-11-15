@@ -8,7 +8,7 @@ ktlint = "1.8.0"
 
 # Kotlin libraries
 kotlinxCoroutines = "1.11.0"
-kotlinxSerialization = "1.12.0"
+kotlinxSerialization = "1.13.0"
 kotlinResult = "2.3.1"
 koin = "4.2.2"
 
